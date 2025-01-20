@@ -1,0 +1,15 @@
+[package]
+name = "by-db"
+version = "0.1.0"
+edition = "2021"
+description = "Biyard database utilities"
+license = "Apache-2.0"
+keywords = ["sql", "database", "nosql"]
+repository = "https://github.com/biyard/rust-sdk/tree/main/packages/by-db"
+
+[dependencies]
+by-types.workspace = true
+easy-dynamodb = "0.1.7"
+slog = "2.7.0"
+sqlx = { version = "0.8.3", features = ["sqlite", "postgres", "runtime-tokio"] }
+thiserror = "2.0.11"

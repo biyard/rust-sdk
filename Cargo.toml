@@ -1,10 +1,10 @@
 [workspace]
-members = ["packages/by-axum","examples/basic-api", "packages/rest-api", "packages/by-types", "packages/by-macros"]
+members = ["packages/by-axum","examples/basic-api", "packages/rest-api", "packages/by-types", "packages/by-macros", "packages/by-db"]
 resolver = "2"
 
 [workspace.dependencies]
-by-axum = { path = "packages/by-axum", version = "0.2.1" }
-by-types = { path = "packages/by-types", version = "0.1.2" }
+by-axum = { path = "packages/by-axum", version = "0.2.7" }
+by-types = { path = "packages/by-types", version = "0.3.0" }
 
 aide = { version = "0.14.0", features = ["axum", "axum-query", "axum-extra", "axum-extra-headers", "axum-extra-query", "axum-json", "swagger", "redoc", "scalar", "macros"] }
 axum = "0.8.1"
