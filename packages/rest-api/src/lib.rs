@@ -55,7 +55,7 @@ pub fn sign_request(req: RequestBuilder) -> RequestBuilder {
     }
 }
 
-pub fn add_header_from_request<R>(
+pub fn add_header_from_request(
     mut req: RequestBuilder,
     header_titles: Vec<&str>,
     header_values: Vec<&str>,
