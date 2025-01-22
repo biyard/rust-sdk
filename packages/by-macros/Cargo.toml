@@ -27,6 +27,8 @@ by-axum.workspace = true
 reqwest = "0.12.12"
 by-types.workspace = true
 schemars.workspace = true
+tokio = { version = "1.43.0", features = ["full"] }
+sqlx = { version = "0.8.3", features = ["sqlite", "postgres", "runtime-tokio"] }
 
 [features]
 server = []

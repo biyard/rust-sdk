@@ -3,6 +3,8 @@ extern crate proc_macro;
 mod api_model;
 mod enum_prop;
 mod query_display;
+#[cfg(feature = "server")]
+mod sql_model;
 
 use api_model::api_model_impl;
 use enum_prop::enum_prop_impl;
