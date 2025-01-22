@@ -55,6 +55,21 @@ pub fn sign_request(req: RequestBuilder) -> RequestBuilder {
     }
 }
 
+pub fn add_header_from_request<R>(
+    mut req: RequestBuilder,
+    header_titles: Vec<&str>,
+    header_values: Vec<&str>,
+) -> RequestBuilder {
+    if header_titles.len() != header_values.len() {
+        return req;
+    } else {
+        for (title, value) in header_titles.iter().zip(header_values.iter()) {
+            req = req.header(*title, *value);
+        }
+        req
+    }
+}
+
 pub async fn get<T, E>(url: &str) -> Result<T, E>
 where
     T: serde::de::DeserializeOwned,

@@ -346,7 +346,7 @@ dependencies = [
 
 [[package]]
 name = "by-macros"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "by-axum",
  "by-types",
@@ -365,7 +365,7 @@ dependencies = [
 
 [[package]]
 name = "by-types"
-version = "0.1.3"
+version = "0.2.0"
 dependencies = [
  "aide",
  "axum",
