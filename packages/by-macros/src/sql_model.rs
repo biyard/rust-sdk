@@ -21,6 +21,7 @@ pub fn sql_model_impl(attr: TokenStream, item: TokenStream) -> TokenStream {
     let insert = model.insert_function();
     let find_one = model.find_one_function();
     let find = model.find_function();
+    let from_trait = model.from_pg_row_trait();
 
     let output = quote! {
         impl #name {
@@ -45,6 +46,8 @@ pub fn sql_model_impl(attr: TokenStream, item: TokenStream) -> TokenStream {
             #find_one
             #find
         }
+
+        #from_trait
     };
 
     tracing::debug!("Generated code: {}", output.to_string());

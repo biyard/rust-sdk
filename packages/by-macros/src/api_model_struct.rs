@@ -672,6 +672,17 @@ impl ApiModel<'_> {
     }
 
     pub fn call_map(&self) -> proc_macro2::TokenStream {
+        let inner = self.from_pg_row_inner();
+        let output = quote! {
+            .map(|row: sqlx::postgres::PgRow| {
+                #inner
+            })
+        };
+
+        output.into()
+    }
+
+    pub fn from_pg_row_inner(&self) -> proc_macro2::TokenStream {
         let name = syn::Ident::new(&self.name, proc_macro2::Span::call_site());
         let mut type_bridges = vec![];
         let mut return_bounds = vec![];
@@ -709,16 +720,28 @@ impl ApiModel<'_> {
             }
         }
 
-        let output = quote! {
-            .map(|row: sqlx::postgres::PgRow| {
-                #(#type_bridges)*
-                #name {
-                    #(#return_bounds),*
-                }
-            })
-        };
+        quote! {
+            use sqlx::Row;
 
-        output.into()
+            #(#type_bridges)*
+            #name {
+                #(#return_bounds),*
+            }
+        }
+        .into()
+    }
+
+    pub fn from_pg_row_trait(&self) -> proc_macro2::TokenStream {
+        let name = syn::Ident::new(&self.name, proc_macro2::Span::call_site());
+        let inner = self.from_pg_row_inner();
+        quote! {
+            impl From<sqlx::postgres::PgRow> for #name {
+                fn from(row: sqlx::postgres::PgRow) -> Self {
+                    #inner
+                }
+            }
+        }
+        .into()
     }
 
     pub fn insert_function(&self) -> proc_macro2::TokenStream {
