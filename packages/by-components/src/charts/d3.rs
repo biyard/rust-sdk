@@ -16,6 +16,12 @@ extern "C" {
     #[wasm_bindgen(js_namespace = d3, js_name = scaleOrdinal)]
     pub fn scale_ordinal() -> D3Scale;
 
+    #[wasm_bindgen(js_namespace = d3, js_name = scaleBand)]
+    pub fn scale_band() -> D3Scale;
+
+    #[wasm_bindgen(js_namespace = d3, js_name = scaleLinear)]
+    pub fn scale_linear() -> D3Scale;
+
     #[wasm_bindgen(js_namespace = d3)]
     pub fn pie() -> D3Pie;
 
@@ -79,6 +85,9 @@ extern "C" {
     #[wasm_bindgen(method, js_name = attr)]
     pub fn attr_with_closure(this: &D3Selection, name: &str, value: &Function) -> D3Selection;
 
+    #[wasm_bindgen(method, js_class = "Selection", js_name = text)]
+    pub fn text_with_closure(this: &D3Selection, value: &Function) -> D3Selection;
+
     #[wasm_bindgen(method, js_name = style)]
     pub fn style(this: &D3Selection, name: &str, value: &str) -> D3Selection;
 
@@ -128,7 +137,34 @@ extern "C" {
     pub fn domain(this: &D3Scale, values: &JsValue) -> D3Scale;
 
     #[wasm_bindgen(method, js_name = range)]
+    pub fn range_scale(this: &D3Scale, values: &JsValue) -> D3Scale;
+
+    #[wasm_bindgen(method, js_name = padding)]
+    pub fn padding(this: &D3Scale, value: f64) -> D3Scale;
+
+    #[wasm_bindgen(method, js_name = bandwidth)]
+    pub fn bandwidth(this: &D3Scale) -> f64;
+
+    #[wasm_bindgen(method, js_name = range)]
     pub fn range(this: &D3Scale, values: &JsValue) -> Function;
+
+    #[wasm_bindgen(js_namespace = d3, js_name = axisBottom)]
+    pub fn axis_bottom(scale: &D3Scale) -> Function;
+
+    #[wasm_bindgen(js_namespace = d3, js_name = axisLeft)]
+    pub fn axis_left(scale: &D3Scale) -> D3Axis;
+
+    #[wasm_bindgen]
+    pub type D3Axis;
+
+    #[wasm_bindgen(method, js_name = ticks)]
+    pub fn ticks(this: &D3Axis, count: i32) -> D3Axis;
+
+    #[wasm_bindgen(method, js_name = tickSize)]
+    pub fn tick_size(this: &D3Axis, size: f64) -> D3Axis;
+
+    #[wasm_bindgen(method, js_name = tickFormat)]
+    pub fn tick_format(this: &D3Axis, format: &Function) -> Function;
 }
 
 #[wasm_bindgen]

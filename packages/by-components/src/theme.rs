@@ -8,6 +8,7 @@ pub struct ChartTheme {
 
     // Pie chart renders each pie based on key color and adjust opacity.
     pub pie_chart_colors: Vec<&'static str>,
+    pub bar_chart_colors: Vec<&'static str>,
 }
 
 impl Default for ChartTheme {
@@ -19,6 +20,7 @@ impl Default for ChartTheme {
             ],
             horizontal_bar_gradient_colors: vec!["#85AEE2", "#2A60D3"],
             pie_chart_colors: vec!["#D4DFF6", "#2A60D3"],
+            bar_chart_colors: vec!["#2A60D3", "#85AEE2"],
         }
     }
 }
