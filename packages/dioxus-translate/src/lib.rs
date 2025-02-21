@@ -38,6 +38,19 @@ impl Default for Language {
     }
 }
 
+impl Language {
+    pub fn switch(&self) -> Self {
+        #[cfg(feature = "ko")]
+        match self {
+            Language::Ko => return Language::En,
+            Language::En => return Language::Ko,
+        }
+
+        #[allow(unreachable_code)]
+        Language::En
+    }
+}
+
 impl std::fmt::Display for Language {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
