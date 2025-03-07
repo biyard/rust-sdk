@@ -1,14 +1,10 @@
 use dioxus::prelude::*;
 #[component]
 pub fn Sort(
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "24".to_string())]
-    width: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] width: String,
 ) -> Element {
     rsx! {
         svg {
@@ -44,14 +40,10 @@ pub fn Sort(
 }
 #[component]
 pub fn RemoveCircle(
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "".to_string())]
-    class: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "".to_string())] class: String,
 ) -> Element {
     rsx! {
         svg {
@@ -82,14 +74,10 @@ pub fn RemoveCircle(
 }
 #[component]
 pub fn Backspace(
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "none".to_string())]
-    fill: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "none".to_string())] fill: String,
 ) -> Element {
     rsx! {
         svg {
@@ -118,14 +106,10 @@ pub fn Backspace(
 }
 #[component]
 pub fn Warning(
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "none".to_string())]
-    fill: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "none".to_string())] fill: String,
 ) -> Element {
     rsx! {
         svg {
@@ -160,14 +144,10 @@ pub fn Warning(
 }
 #[component]
 pub fn Clear(
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    width: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] width: String,
 ) -> Element {
     rsx! {
         svg {
@@ -196,14 +176,10 @@ pub fn Clear(
 }
 #[component]
 pub fn Filter(
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    height: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] height: String,
 ) -> Element {
     rsx! {
         svg {
@@ -239,14 +215,10 @@ pub fn Filter(
 }
 #[component]
 pub fn Add(
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "".to_string())]
-    class: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "".to_string())] class: String,
 ) -> Element {
     rsx! {
         svg {
@@ -268,14 +240,10 @@ pub fn Add(
 }
 #[component]
 pub fn Check(
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "24".to_string())]
-    width: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "24".to_string())] width: String,
 ) -> Element {
     rsx! {
         svg {
@@ -295,16 +263,53 @@ pub fn Check(
         }
     }
 }
+
+#[component]
+pub fn Extra(
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "24".to_string())] width: String,
+) -> Element {
+    rsx! {
+        svg {
+            class,
+            view_box: "0 0 24 24",
+            width,
+            height,
+            fill,
+            xmlns: "http://www.w3.org/2000/svg",
+            circle {
+                cx: "12",
+                cy: "6",
+                fill: "black",
+                r: "1.5",
+                transform: "rotate(90 12 6)",
+            }
+            circle {
+                fill: "black",
+                cy: "12",
+                r: "1.5",
+                transform: "rotate(90 12 12)",
+                cx: "12",
+            }
+            circle {
+                cx: "12",
+                fill: "black",
+                cy: "18",
+                transform: "rotate(90 12 18)",
+                r: "1.5",
+            }
+        }
+    }
+}
+
 #[component]
 pub fn AddCircle(
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    height: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] height: String,
 ) -> Element {
     rsx! {
         svg {
@@ -335,14 +340,10 @@ pub fn AddCircle(
 }
 #[component]
 pub fn Filter1(
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "".to_string())]
-    class: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "".to_string())] class: String,
 ) -> Element {
     rsx! {
         svg {
@@ -364,14 +365,10 @@ pub fn Filter1(
 }
 #[component]
 pub fn ClearCircle(
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "none".to_string())]
-    fill: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "none".to_string())] fill: String,
 ) -> Element {
     rsx! {
         svg {
@@ -409,14 +406,10 @@ pub fn ClearCircle(
 }
 #[component]
 pub fn Remove(
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "".to_string())]
-    class: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "".to_string())] class: String,
 ) -> Element {
     rsx! {
         svg {
@@ -438,14 +431,10 @@ pub fn Remove(
 }
 #[component]
 pub fn CheckCircle(
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "24".to_string())]
-    width: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "24".to_string())] width: String,
 ) -> Element {
     rsx! {
         svg {
@@ -476,14 +465,10 @@ pub fn CheckCircle(
 }
 #[component]
 pub fn CheckBox(
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "".to_string())]
-    class: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "".to_string())] class: String,
 ) -> Element {
     rsx! {
         svg {
