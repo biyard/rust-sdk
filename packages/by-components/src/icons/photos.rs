@@ -1,14 +1,10 @@
 use dioxus::prelude::*;
 #[component]
 pub fn DeletePhoto(
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "none".to_string())]
-    fill: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "none".to_string())] fill: String,
 ) -> Element {
     rsx! {
         svg {
@@ -44,14 +40,10 @@ pub fn DeletePhoto(
 }
 #[component]
 pub fn PhotoOff(
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "24".to_string())]
-    height: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] height: String,
 ) -> Element {
     rsx! {
         svg {
@@ -79,14 +71,10 @@ pub fn PhotoOff(
 }
 #[component]
 pub fn DownloadPhoto(
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    width: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] width: String,
 ) -> Element {
     rsx! {
         svg {
@@ -122,14 +110,10 @@ pub fn DownloadPhoto(
 }
 #[component]
 pub fn LockPhoto(
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "24".to_string())]
-    width: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] width: String,
 ) -> Element {
     rsx! {
         svg {
@@ -172,14 +156,10 @@ pub fn LockPhoto(
 }
 #[component]
 pub fn UploadPhoto(
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    width: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] width: String,
 ) -> Element {
     rsx! {
         svg {
@@ -215,14 +195,10 @@ pub fn UploadPhoto(
 }
 #[component]
 pub fn Photo(
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "none".to_string())]
-    fill: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "none".to_string())] fill: String,
 ) -> Element {
     rsx! {
         svg {
@@ -255,14 +231,10 @@ pub fn Photo(
 }
 #[component]
 pub fn Album(
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "24".to_string())]
-    width: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] width: String,
 ) -> Element {
     rsx! {
         svg {
@@ -298,14 +270,11 @@ pub fn Album(
 }
 #[component]
 pub fn AddPhoto(
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "24".to_string())]
-    width: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "".to_string())] color: String,
 ) -> Element {
     rsx! {
         svg {
@@ -317,7 +286,7 @@ pub fn AddPhoto(
             fill,
             path {
                 d: "M13 4H8.8C7.11984 4 6.27976 4 5.63803 4.32698C5.07354 4.6146 4.6146 5.07354 4.32698 5.63803C4 6.27976 4 7.11984 4 8.8V15.2C4 16.8802 4 17.7202 4.32698 18.362C4.6146 18.9265 5.07354 19.3854 5.63803 19.673C6.27976 20 7.11984 20 8.8 20H15.2C16.8802 20 17.7202 20 18.362 19.673C18.9265 19.3854 19.3854 18.9265 19.673 18.362C20 17.7202 20 16.8802 20 15.2V11",
-                stroke: "black",
+                stroke: "{color}",
                 stroke_width: "2",
                 stroke_linecap: "round",
                 stroke_linejoin: "round",
@@ -341,14 +310,10 @@ pub fn AddPhoto(
 }
 #[component]
 pub fn ExpandPhoto(
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "none".to_string())]
-    fill: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "none".to_string())] fill: String,
 ) -> Element {
     rsx! {
         svg {
@@ -435,14 +400,10 @@ pub fn ExpandPhoto(
 }
 #[component]
 pub fn FavouritePhoto(
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    width: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] width: String,
 ) -> Element {
     rsx! {
         svg {
@@ -478,14 +439,10 @@ pub fn FavouritePhoto(
 }
 #[component]
 pub fn CheckPhoto(
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "none".to_string())]
-    fill: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "none".to_string())] fill: String,
 ) -> Element {
     rsx! {
         svg {
@@ -521,14 +478,10 @@ pub fn CheckPhoto(
 }
 #[component]
 pub fn RemovePhoto(
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "24".to_string())]
-    height: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "24".to_string())] height: String,
 ) -> Element {
     rsx! {
         svg {

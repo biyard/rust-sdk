@@ -1,14 +1,10 @@
 use dioxus::prelude::*;
 #[component]
 pub fn Launch2(
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "none".to_string())]
-    fill: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "none".to_string())] fill: String,
 ) -> Element {
     rsx! {
         svg {
@@ -30,14 +26,10 @@ pub fn Launch2(
 }
 #[component]
 pub fn Wifi(
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "24".to_string())]
-    height: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] height: String,
 ) -> Element {
     rsx! {
         svg {
@@ -66,14 +58,10 @@ pub fn Wifi(
 }
 #[component]
 pub fn LinkBroke(
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "none".to_string())]
-    fill: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "none".to_string())] fill: String,
 ) -> Element {
     rsx! {
         svg {
@@ -95,14 +83,10 @@ pub fn LinkBroke(
 }
 #[component]
 pub fn Signal(
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "none".to_string())]
-    fill: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "none".to_string())] fill: String,
 ) -> Element {
     rsx! {
         svg {
@@ -124,14 +108,10 @@ pub fn Signal(
 }
 #[component]
 pub fn Link1(
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "".to_string())]
-    class: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "".to_string())] class: String,
 ) -> Element {
     rsx! {
         svg {
@@ -153,14 +133,10 @@ pub fn Link1(
 }
 #[component]
 pub fn Send1(
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    height: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] height: String,
 ) -> Element {
     rsx! {
         svg {
@@ -182,14 +158,10 @@ pub fn Send1(
 }
 #[component]
 pub fn Satellite(
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "24".to_string())]
-    height: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "24".to_string())] height: String,
 ) -> Element {
     rsx! {
         svg {
@@ -215,14 +187,10 @@ pub fn Satellite(
 }
 #[component]
 pub fn Share3(
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "24".to_string())]
-    height: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] height: String,
 ) -> Element {
     rsx! {
         svg {
@@ -243,14 +211,10 @@ pub fn Share3(
 }
 #[component]
 pub fn WifiOff(
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    width: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] width: String,
 ) -> Element {
     rsx! {
         svg {
@@ -277,14 +241,11 @@ pub fn WifiOff(
 }
 #[component]
 pub fn Link2(
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "".to_string())]
-    class: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "".to_string())] color: String,
 ) -> Element {
     rsx! {
         svg {
@@ -296,7 +257,7 @@ pub fn Link2(
             fill,
             path {
                 d: "M7.75737 10.5858L4.92894 13.4142C3.75737 14.5858 3.75737 16.4853 4.92894 17.6569L6.34316 19.0711C7.51473 20.2427 9.41422 20.2427 10.5858 19.0711L13.4142 16.2427M9.8787 14.1214L14.1213 9.87873M10.5858 7.7574L13.4142 4.92897C14.5858 3.7574 16.4853 3.7574 17.6568 4.92897L19.0711 6.34319C20.2426 7.51476 20.2426 9.41425 19.0711 10.5858L16.2426 13.4143",
-                stroke: "black",
+                stroke: "{color}",
                 stroke_width: "2",
                 stroke_linecap: "round",
                 stroke_linejoin: "round",
@@ -306,14 +267,10 @@ pub fn Link2(
 }
 #[component]
 pub fn LinkOff2(
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "none".to_string())]
-    fill: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "none".to_string())] fill: String,
 ) -> Element {
     rsx! {
         svg {
@@ -341,14 +298,10 @@ pub fn LinkOff2(
 }
 #[component]
 pub fn Send2(
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "24".to_string())]
-    height: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] height: String,
 ) -> Element {
     rsx! {
         svg {
@@ -370,14 +323,10 @@ pub fn Send2(
 }
 #[component]
 pub fn Share2(
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "".to_string())]
-    class: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "".to_string())] class: String,
 ) -> Element {
     rsx! {
         svg {
@@ -399,14 +348,10 @@ pub fn Share2(
 }
 #[component]
 pub fn Share1(
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    width: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] width: String,
 ) -> Element {
     rsx! {
         svg {
@@ -428,14 +373,10 @@ pub fn Share1(
 }
 #[component]
 pub fn Launch1(
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "none".to_string())]
-    fill: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "none".to_string())] fill: String,
 ) -> Element {
     rsx! {
         svg {
@@ -457,14 +398,10 @@ pub fn Launch1(
 }
 #[component]
 pub fn LinkOff1(
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "24".to_string())]
-    height: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "24".to_string())] height: String,
 ) -> Element {
     rsx! {
         svg {
@@ -492,14 +429,10 @@ pub fn LinkOff1(
 }
 #[component]
 pub fn Link3(
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "none".to_string())]
-    fill: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "none".to_string())] fill: String,
 ) -> Element {
     rsx! {
         svg {

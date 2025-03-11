@@ -1,14 +1,10 @@
 use dioxus::prelude::*;
 #[component]
 pub fn Html(
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "".to_string())]
-    class: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "".to_string())] class: String,
 ) -> Element {
     rsx! {
         svg {
@@ -37,14 +33,11 @@ pub fn Html(
 }
 #[component]
 pub fn Code(
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "".to_string())]
-    class: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "".to_string())] color: String,
 ) -> Element {
     rsx! {
         svg {
@@ -56,7 +49,7 @@ pub fn Code(
             fill,
             path {
                 d: "M9 7L4 12L9 17",
-                stroke: "black",
+                stroke: "{color}",
                 stroke_width: "2",
                 stroke_linecap: "round",
                 stroke_linejoin: "round",
@@ -73,14 +66,10 @@ pub fn Code(
 }
 #[component]
 pub fn Internet(
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "none".to_string())]
-    fill: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "none".to_string())] fill: String,
 ) -> Element {
     rsx! {
         svg {
@@ -122,14 +111,10 @@ pub fn Internet(
 }
 #[component]
 pub fn CodeOff(
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "".to_string())]
-    class: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "".to_string())] class: String,
 ) -> Element {
     rsx! {
         svg {

@@ -1,14 +1,10 @@
 use dioxus::prelude::*;
 #[component]
 pub fn Depression(
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    height: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] height: String,
 ) -> Element {
     rsx! {
         svg {
@@ -51,14 +47,10 @@ pub fn Depression(
 }
 #[component]
 pub fn ThumbsDown(
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    height: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] height: String,
 ) -> Element {
     rsx! {
         svg {
@@ -94,14 +86,10 @@ pub fn ThumbsDown(
 }
 #[component]
 pub fn BrokenHeart(
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    height: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] height: String,
 ) -> Element {
     rsx! {
         svg {
@@ -129,14 +117,10 @@ pub fn BrokenHeart(
 }
 #[component]
 pub fn Smile(
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "none".to_string())]
-    fill: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "none".to_string())] fill: String,
 ) -> Element {
     rsx! {
         svg {
@@ -179,14 +163,11 @@ pub fn Smile(
 }
 #[component]
 pub fn ThumbsUp(
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "none".to_string())]
-    fill: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "".to_string())] color: String,
 ) -> Element {
     rsx! {
         svg {
@@ -198,7 +179,7 @@ pub fn ThumbsUp(
             fill,
             path {
                 d: "M3 10C3 9.44772 3.44772 9 4 9H7V21H4C3.44772 21 3 20.5523 3 20V10Z",
-                stroke: "black",
+                stroke: "{color}",
                 stroke_width: "2",
                 stroke_linecap: "round",
                 stroke_linejoin: "round",
@@ -222,14 +203,10 @@ pub fn ThumbsUp(
 }
 #[component]
 pub fn Heart(
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "24".to_string())]
-    width: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] width: String,
 ) -> Element {
     rsx! {
         svg {
@@ -250,14 +227,10 @@ pub fn Heart(
 }
 #[component]
 pub fn Meh(
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "".to_string())]
-    class: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "".to_string())] class: String,
 ) -> Element {
     rsx! {
         svg {
@@ -300,14 +273,10 @@ pub fn Meh(
 }
 #[component]
 pub fn Sad(
-    #[props(default = "none".to_string())]
-    fill: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "".to_string())]
-    class: String,
+    #[props(default = "none".to_string())] fill: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "".to_string())] class: String,
 ) -> Element {
     rsx! {
         svg {
@@ -357,14 +326,10 @@ pub fn Sad(
 }
 #[component]
 pub fn Grin(
-    #[props(default = "".to_string())]
-    class: String,
-    #[props(default = "24".to_string())]
-    height: String,
-    #[props(default = "24".to_string())]
-    width: String,
-    #[props(default = "none".to_string())]
-    fill: String,
+    #[props(default = "".to_string())] class: String,
+    #[props(default = "24".to_string())] height: String,
+    #[props(default = "24".to_string())] width: String,
+    #[props(default = "none".to_string())] fill: String,
 ) -> Element {
     rsx! {
         svg {

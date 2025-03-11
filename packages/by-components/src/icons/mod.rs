@@ -6,6 +6,7 @@ pub mod bag;
 pub mod border_layer;
 pub mod browser;
 pub mod calendar;
+pub mod chat;
 pub mod cloud;
 pub mod controller;
 pub mod dashboard;
