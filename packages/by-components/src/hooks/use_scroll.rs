@@ -20,7 +20,6 @@ where
         spawn(async move {
             loop {
                 let pos = eval.recv::<String>().await.unwrap_or_default();
-                tracing::debug!("pos: {}", pos);
                 let mut pos = pos.split(',');
                 let y = pos
                     .next()
