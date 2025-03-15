@@ -1,6 +1,7 @@
 pub mod charts;
 pub mod effects;
 pub mod files;
+pub mod hooks;
 pub mod icons;
 pub mod loaders;
 pub mod meta;
