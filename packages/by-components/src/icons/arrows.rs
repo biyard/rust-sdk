@@ -83,7 +83,6 @@ pub fn ChevronUp(
     #[props(default = "none".to_string())] fill: String,
     #[props(default = "24".to_string())] height: String,
     #[props(default = "".to_string())] class: String,
-    #[props(default = "black".to_string())] color: String,
 ) -> Element {
     rsx! {
         svg {
@@ -95,7 +94,7 @@ pub fn ChevronUp(
             fill,
             path {
                 d: "M5 15L11.2929 8.70711C11.6834 8.31658 12.3166 8.31658 12.7071 8.70711L19 15",
-                stroke: "{color}",
+                stroke: "black",
                 stroke_width: "2",
                 stroke_linecap: "round",
                 stroke_linejoin: "round",

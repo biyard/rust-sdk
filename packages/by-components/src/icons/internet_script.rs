@@ -37,7 +37,6 @@ pub fn Code(
     #[props(default = "24".to_string())] width: String,
     #[props(default = "24".to_string())] height: String,
     #[props(default = "".to_string())] class: String,
-    #[props(default = "black".to_string())] color: String,
 ) -> Element {
     rsx! {
         svg {
@@ -49,7 +48,7 @@ pub fn Code(
             fill,
             path {
                 d: "M9 7L4 12L9 17",
-                stroke: "{color}",
+                stroke: "black",
                 stroke_width: "2",
                 stroke_linecap: "round",
                 stroke_linejoin: "round",

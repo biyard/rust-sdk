@@ -245,7 +245,6 @@ pub fn Link2(
     #[props(default = "none".to_string())] fill: String,
     #[props(default = "24".to_string())] width: String,
     #[props(default = "".to_string())] class: String,
-    #[props(default = "black".to_string())] color: String,
 ) -> Element {
     rsx! {
         svg {
@@ -257,7 +256,7 @@ pub fn Link2(
             fill,
             path {
                 d: "M7.75737 10.5858L4.92894 13.4142C3.75737 14.5858 3.75737 16.4853 4.92894 17.6569L6.34316 19.0711C7.51473 20.2427 9.41422 20.2427 10.5858 19.0711L13.4142 16.2427M9.8787 14.1214L14.1213 9.87873M10.5858 7.7574L13.4142 4.92897C14.5858 3.7574 16.4853 3.7574 17.6568 4.92897L19.0711 6.34319C20.2426 7.51476 20.2426 9.41425 19.0711 10.5858L16.2426 13.4143",
-                stroke: "{color}",
+                stroke: "black",
                 stroke_width: "2",
                 stroke_linecap: "round",
                 stroke_linejoin: "round",

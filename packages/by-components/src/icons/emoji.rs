@@ -167,7 +167,6 @@ pub fn ThumbsUp(
     #[props(default = "".to_string())] class: String,
     #[props(default = "24".to_string())] width: String,
     #[props(default = "none".to_string())] fill: String,
-    #[props(default = "black".to_string())] color: String,
 ) -> Element {
     rsx! {
         svg {
@@ -179,7 +178,7 @@ pub fn ThumbsUp(
             fill,
             path {
                 d: "M3 10C3 9.44772 3.44772 9 4 9H7V21H4C3.44772 21 3 20.5523 3 20V10Z",
-                stroke: "{color}",
+                stroke: "black",
                 stroke_width: "2",
                 stroke_linecap: "round",
                 stroke_linejoin: "round",

@@ -274,7 +274,6 @@ pub fn AddPhoto(
     #[props(default = "24".to_string())] height: String,
     #[props(default = "none".to_string())] fill: String,
     #[props(default = "24".to_string())] width: String,
-    #[props(default = "black".to_string())] color: String,
 ) -> Element {
     rsx! {
         svg {
@@ -286,7 +285,7 @@ pub fn AddPhoto(
             fill,
             path {
                 d: "M13 4H8.8C7.11984 4 6.27976 4 5.63803 4.32698C5.07354 4.6146 4.6146 5.07354 4.32698 5.63803C4 6.27976 4 7.11984 4 8.8V15.2C4 16.8802 4 17.7202 4.32698 18.362C4.6146 18.9265 5.07354 19.3854 5.63803 19.673C6.27976 20 7.11984 20 8.8 20H15.2C16.8802 20 17.7202 20 18.362 19.673C18.9265 19.3854 19.3854 18.9265 19.673 18.362C20 17.7202 20 16.8802 20 15.2V11",
-                stroke: "{color}",
+                stroke: "black",
                 stroke_width: "2",
                 stroke_linecap: "round",
                 stroke_linejoin: "round",
