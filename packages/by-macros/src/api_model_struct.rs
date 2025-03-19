@@ -2529,20 +2529,152 @@ impl ApiModel<'_> {
             proc_macro2::Span::call_site(),
         );
 
-        let mut fields = vec![];
+        let mut builder_fields = vec![];
         let mut functions = vec![];
+        let mut bindings = vec![];
+        let mut assigns = vec![];
+        let mut conditions = vec![];
 
         for (_, v) in self.fields.iter() {
+            if v.query_builder {
+                tracing::trace!("building query_builder condition: {}", v.name);
+                let ty = if v.rust_type.starts_with("Vec") {
+                    v.rust_type
+                        .replace(" ", "")
+                        .trim_start_matches("Vec<")
+                        .trim_end_matches(">")
+                        .to_string()
+                } else {
+                    v.rust_type.clone()
+                };
+
+                let ty: proc_macro2::TokenStream =
+                    format!("{}RepositoryQueryBuilder", ty).parse().unwrap();
+                let pattern = syn::LitStr::new(
+                    &format!(r"-- {} start([\s\S]*?)-- {} end", v.name, v.name),
+                    proc_macro2::Span::call_site(),
+                );
+
+                let bpattern = syn::LitStr::new(
+                    &format!(r"-- {} start -- {} end", v.name, v.name),
+                    proc_macro2::Span::call_site(),
+                );
+
+                let bound_name =
+                    syn::LitStr::new(&format!("{}", v.name), proc_macro2::Span::call_site());
+
+                let name = syn::Ident::new(
+                    &format!("{}_builder", v.name),
+                    proc_macro2::Span::call_site(),
+                );
+                builder_fields.push(quote! {
+                    pub #name: Option<#ty>,
+                });
+
+                functions.push(quote! {
+                    pub fn #name(mut self, #name: #ty) -> Self {
+                        self.#name = Some(#name);
+                        self
+                    }
+                });
+
+                if let Some(Relation::ManyToMany {
+                    table_name,
+                    foreign_primary_key,
+                    foreign_reference_key,
+                    reference_key,
+                    target_table: TargetTable::Foreign,
+                    ..
+                }) = &v.relation
+                {
+                    let table_name = syn::LitStr::new(table_name, proc_macro2::Span::call_site());
+
+                    let foreign_primary_key =
+                        syn::LitStr::new(foreign_primary_key, proc_macro2::Span::call_site());
+                    let foreign_reference_key =
+                        syn::LitStr::new(foreign_reference_key, proc_macro2::Span::call_site());
+                    let reference_key =
+                        syn::LitStr::new(reference_key, proc_macro2::Span::call_site());
+
+                    // NOTE: now support only Foreign table target
+                    bindings.push(quote! {
+                        let ret = if let Some(q) = &self.#name {
+                            let mut q = q.clone();
+                            let table_name = #table_name;
+                            let foreign_primary_key = #foreign_primary_key;
+                            let foreign_reference_key = #foreign_reference_key;
+                            let reference_key = #reference_key;
+                            let bound_name = #bound_name;
+                            let w = q.build_where_starts_with(i);
+
+                            let sub_query = if w.is_empty() {
+                                format!("{}", q.base_sql)
+                            } else {
+                                format!("{} WHERE {}", q.base_sql, w)
+                            };
+
+                            tracing::trace!("sub_query(before): {sub_query}");
+                            let sub_query = format!(r#"
+        {sub_query}
+        JOIN {table_name} j ON {bound_name}.id = j.{foreign_primary_key}
+        WHERE j.{foreign_reference_key} = dummy.{reference_key}
+        GROUP BY {bound_name}.id
+"#);
+                            tracing::trace!("new ready sub_query: {sub_query}");
+                            let sub_query = sub_query.replace("p.", &format!("{}.",#bound_name)).replace(" p ", &format!(" {} ", #bound_name)).replace(" dummy.", " p.").to_string();
+                            let sub_query = format!("\n{}\n", sub_query);
+                            tracing::trace!("sub query(after): {}", sub_query);
+
+                            let re = regex::Regex::new(#pattern).unwrap();
+                            re.replace_all(&ret, #bpattern).to_string().replace(#bpattern, &sub_query).to_string()
+                        } else {
+                            ret
+                        };
+
+                        tracing::trace!("modified query: \n{}", ret);
+                    });
+                } else if let Some(Relation::OneToMany { foreign_key, .. }) = &v.relation {
+                    let foreign_key = syn::LitStr::new(
+                        &format!("{} = dummy.id", foreign_key),
+                        proc_macro2::Span::call_site(),
+                    );
+
+                    bindings.push(quote! {
+                        let ret = if let Some(q) = &self.#name {
+                            let mut q = q.clone();
+                            q.conditions.push(by_types::Conditions::Custom(#foreign_key.to_string()));
+                            let sub_query = q.sql_starts_with(i);
+                            let sub_query = sub_query.replace("p.", &format!("{}.",#bound_name)).replace(" p ", &format!(" {} ", #bound_name)).replace(" dummy.", " p.").to_string();
+                            let sub_query = format!("\n{}\n", sub_query);
+                            tracing::trace!("sub query(after): {}", sub_query);
+
+                            let re = regex::Regex::new(#pattern).unwrap();
+                            re.replace_all(&ret, #bpattern).to_string().replace(#bpattern, &sub_query).to_string()
+                        } else {
+                            ret
+                        };
+
+                        tracing::trace!("modified query: {}", ret);
+                    });
+                }
+                assigns.push(quote! {
+                    #name: self.#name,
+                });
+                conditions.push(quote! {
+                    if let Some(q) = &self.#name {
+                        conditions.extend(q.all_conditions());
+                    }
+                });
+                continue;
+            }
+
             if !v.can_query() {
                 continue;
             }
+
             let name = syn::Ident::new(&v.name, proc_macro2::Span::call_site());
             let ty = v.unwrapped_type_token();
             let field_id_str = syn::LitStr::new(&v.name, proc_macro2::Span::call_site());
-
-            fields.push(quote! {
-                pub #name: Option<#ty>
-            });
 
             match ty.to_string().as_str() {
                 "i32" | "u32" => {
@@ -2604,6 +2736,7 @@ impl ApiModel<'_> {
                 self
             }
         });
+        let ns = syn::LitStr::new(&name.to_string(), proc_macro2::Span::call_site());
 
         quote! {
             #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Default)]
@@ -2615,7 +2748,8 @@ impl ApiModel<'_> {
                 pub order: by_types::Order,
                 pub limit: Option<i32>,
                 pub page: Option<i32>,
-                pub or: Vec<Vec<by_types::Conditions>>
+                pub or: Vec<Vec<by_types::Conditions>>,
+                #(#builder_fields)*
             }
 
             impl std::ops::BitOr for #name {
@@ -2637,6 +2771,7 @@ impl ApiModel<'_> {
                         limit: self.limit.or(rhs.limit),
                         page: self.page.or(rhs.page),
                         or: new_or,
+                        #(#assigns)*
                     }
                 }
             }
@@ -2681,10 +2816,9 @@ impl ApiModel<'_> {
                     self
                 }
 
-                pub fn build_where(&self) -> String {
+                pub fn build_where_starts_with(&self, i:&mut i32) -> String {
                     let mut where_clause = vec![];
-                    let mut i = 1;
-                    tracing::debug!("Building where clause with group: {}", self.group_by);
+                    tracing::debug!("Building where clause for {}", #ns);
                     let prefix = if self.group_by.is_empty() {
                         ""
                     } else {
@@ -2692,10 +2826,11 @@ impl ApiModel<'_> {
                     };
 
                     for condition in self.conditions.iter() {
-                        let (q, new_i) = condition.to_binder(i);
-                        i = new_i;
+                        let (q, new_i) = condition.to_binder(*i);
+                        *i = new_i;
                         where_clause.push(format!("{}{}", prefix, q));
                     }
+                    tracing::debug!("conditions: {:?}", where_clause);
 
                     let mut ret = vec![where_clause.join(" AND ")];
 
@@ -2703,8 +2838,8 @@ impl ApiModel<'_> {
                         let mut where_clause = vec![];
 
                         for condition in conditions.iter() {
-                            let (q, new_i) = condition.to_binder(i);
-                            i = new_i;
+                            let (q, new_i) = condition.to_binder(*i);
+                            *i = new_i;
                             where_clause.push(format!("{}{}", prefix, q));
                         }
                         ret.push(where_clause.join(" AND "));
@@ -2717,8 +2852,13 @@ impl ApiModel<'_> {
                     }
                 }
 
-                pub fn sql(&self) -> String {
-                    let w = self.build_where();
+                pub fn build_where(&self) -> String {
+                    let mut _i = 1;
+                    self.build_where_starts_with(&mut _i)
+                }
+
+                pub fn sql_starts_with(&self, i: &mut i32) -> String {
+                    let w = self.build_where_starts_with(i);
 
                     let mut query = if w.is_empty() {
                         format!("{} {} {}", self.base_sql, self.group_by, self.order)
@@ -2730,7 +2870,7 @@ impl ApiModel<'_> {
                         query = query.replacen("SELECT", "SELECT COUNT(*) OVER() as total_count,", 1);
                     }
 
-                    if let Some(limit) = self.limit {
+                    let ret = if let Some(limit) = self.limit {
                         if let Some(page) = self.page {
                             format!("{} LIMIT {} OFFSET {}", query, limit, (limit * (page - 1)))
                         } else {
@@ -2738,7 +2878,25 @@ impl ApiModel<'_> {
                         }
                     } else {
                         query
-                    }
+                    };
+
+                    #(#bindings)*
+
+                    ret
+                }
+
+                pub fn sql(&self) -> String {
+                    let mut _i = 1;
+                    self.sql_starts_with(&mut _i)
+                }
+
+                pub fn all_conditions(&self) -> Vec<by_types::Conditions> {
+                    let mut conditions = self.conditions.clone();
+                    conditions.extend(self.or.iter().flatten().cloned());
+
+                    #(#conditions)*
+
+                    conditions
                 }
 
                 pub fn query(
@@ -2748,17 +2906,15 @@ impl ApiModel<'_> {
                 sqlx::Postgres,
                 <sqlx::Postgres as sqlx::Database>::Arguments<'static>,
                 > {
-                    let mut query = self.sql();
+                    let mut i = 1;
+                    let mut query = self.sql_starts_with(&mut i);
 
                     let s: Box<String> = Box::new(query);
                     let query: &'static str = Box::leak(s);
 
                     let mut q = sqlx::query(query);
 
-                    let mut conditions = self.conditions.clone();
-                    conditions.extend(self.or.iter().flatten().cloned());
-
-                    for condition in conditions.clone() {
+                    for condition in self.all_conditions() {
                         q = match condition {
                             by_types::Conditions::BetweenBigint(_, from, to) => {
                                 tracing::debug!("Binding BetweenBigint {} and {}", from, to);
@@ -2859,6 +3015,10 @@ impl ApiModel<'_> {
                                 q
                             }
                             by_types::Conditions::FalseBoolean(_) => {
+                                tracing::debug!("(Not)Binding FalseBoolean");
+                                q
+                            }
+                            by_types::Conditions::Custom(_) => {
                                 tracing::debug!("(Not)Binding FalseBoolean");
                                 q
                             }
@@ -3641,6 +3801,7 @@ pub enum Relation {
 pub struct ApiField {
     pub name: String, // this is a native field name in rust
     pub primary_key: bool,
+    pub query_builder: bool,
     pub relation: Option<Relation>,
     pub r#type: String,
     pub unique: bool,
@@ -3741,10 +3902,12 @@ END AS {bound_name}
 COALESCE(
   (SELECT jsonb_agg(to_jsonb(m))
      FROM (
+-- {bound_name} start
        SELECT DISTINCT ON (f.id) {table}.*
          FROM {foreign_table_name} f
               JOIN {table_name} j ON f.id = j.{foreign_primary_key}
         WHERE j.{foreign_reference_key} = p.{reference_key}
+-- {bound_name} end
      ) m
   ), '[]'
 ) AS {bound_name}"#,
@@ -3773,9 +3936,11 @@ COALESCE(
 COALESCE(
   (SELECT jsonb_agg(to_jsonb(m))
      FROM (
+-- {bound_name} start
        SELECT DISTINCT ON (f.id) f.*
          FROM {table_name} f
         WHERE f.{foreign_key} = p.{reference_key}
+-- {bound_name} end
      ) m
   ), '[]'
 ) AS {bound_name}"#,
@@ -4533,6 +4698,7 @@ impl ApiField {
         let f = super::sql_model::parse_field_attr(field);
         let skip = f.attrs.contains_key(&SqlAttributeKey::Skip);
 
+        let query_builder = f.attrs.contains_key(&SqlAttributeKey::Nested);
         let primary_key = f.attrs.contains_key(&SqlAttributeKey::PrimaryKey);
         if primary_key {
             if rust_type.as_str() != "i64" {
@@ -4674,6 +4840,7 @@ impl ApiField {
         let ret = Self {
             name,
             primary_key,
+            query_builder,
             relation,
             r#type,
             unique,

@@ -9,7 +9,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build-deployment:
+  non-server-feature:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,7 +25,66 @@ jobs:
           toolchain: stable
 
       - name: test
-        run: cargo test
+        env:
+          RUSTFLAGS: "-A warnings"
+        run: cargo test --tests
+
+  server-feature:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          ssh-key: ${{ secrets.PULL_KEY_REPO }}
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: clippy, rustfmt
+          target: wasm32-unknown-unknown
+          toolchain: stable
+      - name: Install PostgreSQL Client
+        run: sudo apt-get install -y postgresql-client
+
+      - name: Initialize Database SQL
+        run: |
+          psql postgresql://postgres:postgres@localhost:5432/test -f ./fixtures/sql/init.sql
+
+      - name: test with server feature
+        env:
+          RUSTFLAGS: "-A warnings"
+        run: cargo test --features server --tests
+
+  build-deployment:
+    runs-on: ubuntu-latest
+    needs: [server-feature, non-server-feature]
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          ssh-key: ${{ secrets.PULL_KEY_REPO }}
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: clippy, rustfmt
+          target: wasm32-unknown-unknown
+          toolchain: stable
 
       - name: Publish
         env:

@@ -74,6 +74,7 @@ pub fn sql_model_impl(attr: TokenStream, item: TokenStream) -> TokenStream {
 #[derive(Debug, Eq, PartialEq, Hash)]
 pub enum SqlAttributeKey {
     PrimaryKey,
+    Nested,
     SqlType,
     Relation,
     Unique,
@@ -109,6 +110,7 @@ pub enum Aggregator {
 #[derive(Debug)]
 pub enum SqlAttribute {
     PrimaryKey,
+    Nested,
     SqlType(String),
     ManyToMany {
         // Table name of the join table
@@ -188,6 +190,9 @@ pub fn parse_field_attr(field: &Field) -> SqlAttributes {
                     if let proc_macro2::TokenTree::Ident(iden) = nested {
                         let id = iden.to_string();
                         match id.as_str() {
+                            "nested" => {
+                                field_attrs.insert(SqlAttributeKey::Nested, SqlAttribute::Nested);
+                            }
                             "primary_key" => {
                                 field_attrs
                                     .insert(SqlAttributeKey::PrimaryKey, SqlAttribute::PrimaryKey);

@@ -56,6 +56,8 @@ pub enum Conditions {
 
     TrueBoolean(String),
     FalseBoolean(String),
+
+    Custom(String),
 }
 
 impl Conditions {
@@ -100,6 +102,7 @@ impl Conditions {
                 let q = format!("{} = false", field);
                 return (q, i);
             }
+            Conditions::Custom(q) => return (q.clone(), i),
         };
 
         (q, i + 1)
