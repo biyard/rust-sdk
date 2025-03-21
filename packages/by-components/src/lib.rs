@@ -6,4 +6,5 @@ pub mod icons;
 pub mod loaders;
 pub mod meta;
 pub mod responsive;
+pub mod rich_texts;
 pub mod theme;
