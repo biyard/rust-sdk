@@ -80,7 +80,7 @@ pub fn derive_api_model(input: TokenStream) -> TokenStream {
             None => quote! { compile_error!("Enum variants must have explicit discriminants"); },
         };
         tracing::trace!("discriminant: {}", discriminant.to_string());
-        quote! { #discriminant => Ok(#name::#ident), }
+        quote! { val if val == #discriminant => Ok(#name::#ident), }
     });
 
     let expanded = quote! {
