@@ -26,6 +26,9 @@ pub fn launch(_app: fn() -> Element) {
     #[cfg(feature = "web")]
     dioxus::launch(_app);
 
+    #[cfg(feature = "mobile")]
+    dioxus::launch(_app);
+
     #[cfg(feature = "server")]
     {
         use axum::routing::*;
@@ -83,6 +86,9 @@ where
     <L::Service as Service<Request>>::Future: Send + 'static,
 {
     #[cfg(feature = "web")]
+    dioxus::launch(app);
+
+    #[cfg(feature = "mobile")]
     dioxus::launch(app);
 
     #[cfg(feature = "server")]

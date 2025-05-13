@@ -48,6 +48,7 @@ fe = [
     "rest-api/web",
 ]
 web = ["fe", "dioxus-aws/web", "dioxus/web", "dioxus-translate/web"]
+mobile = ["fe", "dioxus-aws/mobile", "dioxus/mobile", "dioxus-translate/web"]
 server = [
     "be",
     "dioxus-aws/server",
