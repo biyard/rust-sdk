@@ -16,6 +16,7 @@ pub mod prelude {
         feature = "be",
         feature = "fe",
         feature = "web",
+        feature = "mobile",
         feature = "server",
         all(feature = "server", feature = "lambda")
     ))]
@@ -23,6 +24,7 @@ pub mod prelude {
     #[cfg(any(
         feature = "fe",
         feature = "web",
+        feature = "mobile",
         feature = "server",
         all(feature = "server", feature = "lambda")
     ))]
@@ -30,6 +32,7 @@ pub mod prelude {
     #[cfg(any(
         feature = "fe",
         feature = "web",
+        feature = "mobile",
         feature = "server",
         all(feature = "server", feature = "lambda")
     ))]
@@ -37,6 +40,7 @@ pub mod prelude {
     #[cfg(any(
         feature = "fe",
         feature = "web",
+        feature = "mobile",
         feature = "server",
         all(feature = "server", feature = "lambda")
     ))]
@@ -44,6 +48,7 @@ pub mod prelude {
     #[cfg(any(
         feature = "fe",
         feature = "web",
+        feature = "mobile",
         feature = "server",
         all(feature = "server", feature = "lambda")
     ))]
@@ -51,6 +56,7 @@ pub mod prelude {
     #[cfg(any(
         feature = "fe",
         feature = "web",
+        feature = "mobile",
         feature = "server",
         all(feature = "server", feature = "lambda")
     ))]
@@ -58,6 +64,7 @@ pub mod prelude {
     #[cfg(any(
         feature = "fe",
         feature = "web",
+        feature = "mobile",
         feature = "server",
         all(feature = "server", feature = "lambda")
     ))]
