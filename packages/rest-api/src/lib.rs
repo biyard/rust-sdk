@@ -253,12 +253,30 @@ where
         let res = send(req).await?;
 
         if res.status().is_success() {
-            Ok(res.json().await?)
+            return Ok(res.json().await?);
         } else {
-            Err(res.json().await?)
+            return Err(res.json().await?);
         }
     }
-    #[cfg(not(feature = "server"))]
+
+    #[allow(unused)]
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let client = reqwest::Client::builder().build()?;
+        #[allow(unused_mut)]
+        let mut req = client.get(url);
+
+        let res = send(req).await?;
+
+        if res.status().is_success() {
+            return Ok(res.json().await?);
+        } else {
+            return Err(res.json().await?);
+        }
+    }
+
+    #[allow(unused)]
+    #[cfg(feature = "web")]
     {
         let res = gloo_net::http::Request::get(url)
             .header("Content-Type", "application/json")
@@ -305,7 +323,7 @@ where
     T: serde::de::DeserializeOwned,
     E: serde::de::DeserializeOwned + From<reqwest::Error> + From<gloo_net::Error>,
 {
-    #[cfg(feature = "server")]
+    #[cfg(any(feature = "server", not(target_arch = "wasm32")))]
     {
         let client = reqwest::Client::builder().build()?;
 
@@ -319,7 +337,7 @@ where
         }
     }
 
-    #[cfg(not(feature = "server"))]
+    #[cfg(all(not(feature = "server"), target_arch = "wasm32"))]
     {
         tracing::debug!("POST(Web) {}", url);
         let req = gloo_net::http::Request::post(url)
