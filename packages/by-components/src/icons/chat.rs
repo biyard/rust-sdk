@@ -102,16 +102,18 @@ pub fn RoundBubble2(
 
 #[component]
 pub fn SquareChat(
+    #[props(default = "".to_string())] class: String,
     #[props(default = "24".to_string())] width: String,
     #[props(default = "24".to_string())] height: String,
-    #[props(default = "#FFFFFF".to_string())] color: String,
+    #[props(default = "#FFFFFF".to_string())] fill: String,
 ) -> Element {
     rsx! {
         svg {
-            width: "25",
-            height: "25",
+            class,
+            width,
+            height,
             view_box: "0 0 25 25",
-            fill: "none",
+            fill,
             xmlns: "http://www.w3.org/2000/svg",
             g { id: "Help Question",
                 path {
