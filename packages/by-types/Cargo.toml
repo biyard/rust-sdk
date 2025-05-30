@@ -25,6 +25,7 @@ tracing = "0.1.41"
 serde_json.workspace = true
 cookie = { version = "0.18.1", optional = true }
 gloo-net = { workspace = true }
+async-graphql = "7.0.17"
 
 [features]
 server = ["aide", "axum", "schemars", "sqlx", "cookie"]

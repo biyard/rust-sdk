@@ -67,11 +67,24 @@ pub fn api_model_impl(attr: TokenStream, item: TokenStream) -> TokenStream {
     .parse::<proc_macro2::TokenStream>()
     .unwrap();
 
+    let drv = if model.graphql {
+        quote! {
+            #[derive(Debug, Clone, serde::Deserialize, serde::Serialize, Default, PartialEq, async_graphql::SimpleObject)]
+        }
+    } else {
+        quote! {
+            #[derive(Debug, Clone, serde::Deserialize, serde::Serialize, Default, PartialEq)]
+        }
+    };
+
+    let graphql_endpoints = crate::graphql::generate_graphql(&model);
+
     let output = quote! {
         #db_structs
 
         #struct_comment
-        #[derive(Debug, Clone, serde::Deserialize, serde::Serialize, Default, PartialEq)]
+
+        #drv
         #[cfg_attr(feature = "server", derive(schemars::JsonSchema, aide::OperationIo))]
         #stripped_input
 
@@ -86,6 +99,8 @@ pub fn api_model_impl(attr: TokenStream, item: TokenStream) -> TokenStream {
         #param_struct
 
         #get_response
+
+        #graphql_endpoints
     };
 
     let dir_path = match option_env!("API_MODEL_ARTIFACT_DIR") {

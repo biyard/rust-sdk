@@ -21,6 +21,7 @@ use tracing::instrument;
 #[cfg(feature = "server")]
 use crate::sql_model::*;
 
+#[derive(PartialEq)]
 pub enum Database {
     Postgres,
 }
@@ -39,6 +40,7 @@ pub struct ApiModel<'a> {
     pub database: Option<Database>,
 
     pub result_type: proc_macro2::TokenStream,
+    pub graphql: bool,
 
     pub name: String,
     pub name_id: &'a syn::Ident,
@@ -3495,6 +3497,7 @@ impl<'a> ApiModel<'a> {
         let mut parent_ids = Vec::new();
         let mut iter_type = "by_types::QueryResponse".to_string();
         let mut custom_query_type = None;
+        let mut graphql = true;
         let mut result_type: proc_macro2::TokenStream = "crate::Result".parse().unwrap();
         let mut read_action_names = IndexMap::<String, ActionField>::new();
         let actions = attr
@@ -3524,6 +3527,9 @@ impl<'a> ApiModel<'a> {
                             })
                             .collect::<Vec<&str>>()
                             .join("/");
+                    }
+                    "graphql" => {
+                        graphql = value.to_string() == "true";
                     }
                     "iter_type" => iter_type = value.to_string(),
                     "custom_query_type" => custom_query_type = Some(value.to_string()),
@@ -3740,6 +3746,7 @@ impl<'a> ApiModel<'a> {
             database,
             #[cfg(feature = "server")]
             primary_key,
+            graphql,
 
             result_type,
 

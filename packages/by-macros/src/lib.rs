@@ -4,10 +4,12 @@ mod action;
 mod api_model;
 mod api_model_struct;
 mod enum_prop;
+pub(crate) mod graphql;
 pub(crate) mod parse_queryable_fields;
 #[cfg(feature = "server")]
 mod query_builder_functions;
 mod query_display;
+mod query_root;
 #[cfg(feature = "server")]
 mod sql_model;
 
@@ -17,6 +19,11 @@ use proc_macro::TokenStream;
 use query_display::query_display_impl;
 use quote::{quote, ToTokens};
 use syn::{parse_macro_input, Data, DataEnum, DeriveInput, Fields};
+
+#[proc_macro]
+pub fn query_root(input: TokenStream) -> TokenStream {
+    query_root::query_root_impl(input)
+}
 
 #[proc_macro_derive(QueryDisplay)]
 pub fn query_display_derive(input: TokenStream) -> TokenStream {
