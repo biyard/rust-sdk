@@ -67,6 +67,21 @@ export class CdkStack extends cdk.Stack {
     let createRds = process.env.CREATE_RDS === "true";
     let enableCron = process.env.ENABLE_CRON === "true";
     let enableCdn = process.env.ENABLE_CDN !== "false";
+    let containerPort = Number(process.env.CONTAINER_PORT) || 3000;
+    let desiredCount = Number(process.env.DESIRED_COUNT) || 1;
+    let enableService = Boolean(process.env.ENABLE_SERVICE) || false;
+    let maxHealthyPercent = Number(process.env.MAX_HEALTHY_PERCENT || 100);
+    let minHealthyPercent = Number(process.env.MIN_HEALTHY_PERCENT || 0);
+    let maxCapacity = Number(process.env.MAX_CAPACITY || 20);
+    let minCapacity = Number(process.env.MIN_CAPACITY || 2);
+    let containerEnvs = process.env.CONTAINER_ENVS?.split(",");
+    let healthPath = process.env.HEALTH_PATH || "/version";
+
+    if (enableService) {
+      maxHealthyPercent = 200;
+      minHealthyPercent = 50;
+    }
+
     let opensearchCollections = [
       {
         name: `${project}-${env}`,
@@ -79,6 +94,7 @@ export class CdkStack extends cdk.Stack {
     let vpcId = process.env.VPC_ID || "";
     const repoName = process.env.REPO_NAME || "";
     const commit = process.env.COMMIT || "";
+    const registry = process.env.REGISTRY || undefined;
     const prefix = `${process.env.SERVICE}-${process.env.ENV}`;
     const versions = (process.env.VERSIONS || "").split(",");
     let endpoints = [];
@@ -332,11 +348,6 @@ export class CdkStack extends cdk.Stack {
       const vpc = ec2.Vpc.fromLookup(this, "Vpc", {
         vpcId,
       });
-      const repository = Repository.fromRepositoryName(
-        this,
-        "FetcherRepository",
-        repoName,
-      );
 
       const cluster = new ecs.Cluster(this, "Cluster", {
         vpc,
@@ -371,23 +382,60 @@ export class CdkStack extends cdk.Stack {
         executionRole: taskExecutionRole,
       });
 
-      const container = taskDefinition.addContainer("Container", {
-        image: ContainerImage.fromEcrRepository(repository, commit),
+      let options: any = {
         logging: new AwsLogDriver({
           streamPrefix: `${prefix}-logs`,
         }),
-      });
+        environment: {},
+      };
+
+      if (registry) {
+        options.image = ContainerImage.fromRegistry(registry);
+      } else {
+        const repository = Repository.fromRepositoryName(
+          this,
+          "FetcherRepository",
+          repoName,
+        );
+
+        options.image = ContainerImage.fromEcrRepository(repository, commit);
+      }
+
+      for (let env of containerEnvs || []) {
+        options.environment[env] = process.env[env];
+      }
+
+      const container = taskDefinition.addContainer("Container", options);
+
       container.addPortMappings({
-        containerPort: 3000,
+        containerPort,
       });
 
       const service = new FargateService(this, "FargateService", {
         cluster,
         taskDefinition,
-        desiredCount: 1,
-        maxHealthyPercent: 100,
-        minHealthyPercent: 0,
+        desiredCount,
+        maxHealthyPercent,
+        minHealthyPercent,
       });
+
+      if (enableService) {
+        const scaling = service.autoScaleTaskCount({
+          minCapacity,
+          maxCapacity,
+        });
+        scaling.scaleOnCpuUtilization("CpuScaling", {
+          targetUtilizationPercent: 50,
+          scaleInCooldown: cdk.Duration.seconds(60),
+          scaleOutCooldown: cdk.Duration.seconds(60),
+        });
+        scaling.scaleOnMemoryUtilization("MemoryScaling", {
+          targetUtilizationPercent: 50,
+          scaleInCooldown: cdk.Duration.seconds(60),
+          scaleOutCooldown: cdk.Duration.seconds(60),
+        });
+      }
+
       const alb = new elbv2.ApplicationLoadBalancer(this, "ALB", {
         vpc,
         internetFacing: true,
@@ -406,7 +454,7 @@ export class CdkStack extends cdk.Stack {
           port: 80,
           deregistrationDelay: cdk.Duration.seconds(30),
           healthCheck: {
-            path: "/version",
+            path: healthPath,
             healthyThresholdCount: 2,
             unhealthyThresholdCount: 3,
             interval: cdk.Duration.seconds(10),
