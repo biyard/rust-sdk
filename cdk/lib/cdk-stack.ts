@@ -218,10 +218,12 @@ export class CdkStack extends cdk.Stack {
     }
 
     if (enableS3) {
-      var allowedOrigins = ["https://" + domain];
-      if (env !== "prod") {
-        allowedOrigins.push("http://localhost:8080");
-      }
+      var allowedOrigins = [
+        `https://${domain}`,
+        `https://dev.${domain}`,
+        `https://stage.${domain}`,
+        "http://localhost:*",
+      ];
 
       const assetsBucket = new s3.Bucket(this, "Bucket", {
         bucketName: domain,
@@ -229,11 +231,7 @@ export class CdkStack extends cdk.Stack {
         cors: [
           {
             allowedHeaders: ["*"],
-            allowedMethods: [
-              s3.HttpMethods.PUT,
-              s3.HttpMethods.POST,
-              s3.HttpMethods.DELETE,
-            ],
+            allowedMethods: [s3.HttpMethods.PUT, s3.HttpMethods.POST],
             allowedOrigins,
             exposedHeaders: [],
           },
@@ -241,73 +239,81 @@ export class CdkStack extends cdk.Stack {
       });
 
       const s3Origin = new origins.S3Origin(assetsBucket);
-      distributionProps.additionalBehaviors = {
-        "/metadata/*": {
-          origin: s3Origin,
-          cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
-          compress: true,
-        },
-        "/assets/*": {
-          origin: s3Origin,
-          cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
-          compress: true,
-        },
-        "/*.js": {
-          origin: s3Origin,
-          cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
-          compress: true,
-        },
-        "/*.css": {
-          origin: s3Origin,
-          cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
-          compress: true,
-        },
-        "/*.html": {
-          origin: s3Origin,
-          cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
-          compress: true,
-        },
-        "/*.ico": {
-          origin: s3Origin,
-          cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
-          compress: true,
-        },
-        "/*.svg": {
-          origin: s3Origin,
-          cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
-          compress: true,
-        },
-        "/*.avif": {
-          origin: s3Origin,
-          cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
-          compress: true,
-        },
-        "/*.png": {
-          origin: s3Origin,
-          cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
-          compress: true,
-        },
-        "/*.wasm": {
-          origin: s3Origin,
-          cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
-          compress: true,
-        },
-        "/icons/*": {
-          origin: s3Origin,
-          cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
-          compress: true,
-        },
-        "/images/*": {
-          origin: s3Origin,
-          cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
-          compress: true,
-        },
-        "/public/*": {
-          origin: s3Origin,
-          cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
-          compress: true,
-        },
-      };
+
+      if (!enableLambda && !enableFargate) {
+        distributionProps.defaultBehavior.origin = s3Origin;
+        distributionProps.defaultBehavior.cachePolicy =
+          cloudfront.CachePolicy.CACHING_OPTIMIZED;
+        distributionProps.defaultBehavior.compress = true;
+      } else {
+        distributionProps.additionalBehaviors = {
+          "/metadata/*": {
+            origin: s3Origin,
+            cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+            compress: true,
+          },
+          "/assets/*": {
+            origin: s3Origin,
+            cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+            compress: true,
+          },
+          "/*.js": {
+            origin: s3Origin,
+            cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+            compress: true,
+          },
+          "/*.css": {
+            origin: s3Origin,
+            cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+            compress: true,
+          },
+          "/*.html": {
+            origin: s3Origin,
+            cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+            compress: true,
+          },
+          "/*.ico": {
+            origin: s3Origin,
+            cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+            compress: true,
+          },
+          "/*.svg": {
+            origin: s3Origin,
+            cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+            compress: true,
+          },
+          "/*.avif": {
+            origin: s3Origin,
+            cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+            compress: true,
+          },
+          "/*.png": {
+            origin: s3Origin,
+            cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+            compress: true,
+          },
+          "/*.wasm": {
+            origin: s3Origin,
+            cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+            compress: true,
+          },
+          "/icons/*": {
+            origin: s3Origin,
+            cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+            compress: true,
+          },
+          "/images/*": {
+            origin: s3Origin,
+            cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+            compress: true,
+          },
+          "/public/*": {
+            origin: s3Origin,
+            cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+            compress: true,
+          },
+        };
+      }
     }
 
     for (let endpoint of endpoints) {
