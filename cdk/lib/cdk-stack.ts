@@ -67,13 +67,13 @@ export class CdkStack extends cdk.Stack {
     let createRds = process.env.CREATE_RDS === "true";
     let enableCron = process.env.ENABLE_CRON === "true";
     let enableCdn = process.env.ENABLE_CDN !== "false";
-    let containerPort = Number(process.env.CONTAINER_PORT) || 3000;
-    let desiredCount = Number(process.env.DESIRED_COUNT) || 1;
-    let enableService = Boolean(process.env.ENABLE_SERVICE) || false;
-    let maxHealthyPercent = Number(process.env.MAX_HEALTHY_PERCENT || 100);
-    let minHealthyPercent = Number(process.env.MIN_HEALTHY_PERCENT || 0);
-    let maxCapacity = Number(process.env.MAX_CAPACITY || 20);
-    let minCapacity = Number(process.env.MIN_CAPACITY || 2);
+    let containerPort = Number(process.env.CONTAINER_PORT || "3000");
+    let desiredCount = Number(process.env.DESIRED_COUNT || "1");
+    let enableService = process.env.ENABLE_SERVICE === "false";
+    let maxHealthyPercent = Number(process.env.MAX_HEALTHY_PERCENT || "100");
+    let minHealthyPercent = Number(process.env.MIN_HEALTHY_PERCENT || "0");
+    let maxCapacity = Number(process.env.MAX_CAPACITY || "20");
+    let minCapacity = Number(process.env.MIN_CAPACITY || "2");
     let containerEnvs = process.env.CONTAINER_ENVS?.split(",");
     let healthPath = process.env.HEALTH_PATH || "/version";
 
