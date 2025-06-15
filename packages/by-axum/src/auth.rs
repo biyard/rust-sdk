@@ -10,6 +10,8 @@ use by_types::{AuthConfig, Claims, TokenScheme};
 use http::header::COOKIE;
 use jsonwebtoken::{Algorithm, DecodingKey, Validation};
 use rest_api::Signature;
+use serde::{Deserialize, Serialize};
+use tower_sessions::Session;
 
 static mut AUTH_CONFIG: Option<AuthConfig> = None;
 
@@ -47,8 +49,15 @@ pub enum Authorization {
     UserSig(Signature),
     Bearer { claims: Claims },
     Basic { username: String, password: String },
+    Session(UserSession),
     ServerKey,
     SecretApiKey,
+}
+
+#[derive(Debug, Default, Deserialize, Serialize, Clone, PartialEq, Eq)]
+pub struct UserSession {
+    pub user_id: i64,
+    pub principal: String,
 }
 
 /// Authorization middleware
@@ -69,6 +78,15 @@ pub async fn authorization_middleware(
 ) -> Result<Response<Body>, StatusCode> {
     tracing::debug!("Authorization middleware {:?}", req.uri());
 
+    if let Some(session) = req.extensions().get::<Session>() {
+        if let Ok(Some(user_session)) = session.get::<UserSession>("user_session").await {
+            tracing::debug!("User session found: {:?}", user_session);
+            req.extensions_mut()
+                .insert(Some(Authorization::Session(user_session)));
+            return Ok(next.run(req).await);
+        }
+    }
+
     // Extract token information first without modifying req
     let token_info = extract_auth_token(&req);
 
@@ -88,6 +106,7 @@ pub async fn authorization_middleware(
                     }
                 }
                 TokenScheme::XServerKey => verify_server_key(Some(value)).ok(),
+                TokenScheme::Session => None,
             };
 
             req.extensions_mut().insert(ext);
@@ -97,7 +116,6 @@ pub async fn authorization_middleware(
     req.extensions_mut().insert(None::<Authorization>);
     Ok(next.run(req).await)
 }
-
 /// Extracts authentication token from request headers
 /// Prioritizes Authorization header over Cookie header
 fn extract_auth_token(req: &Request) -> Option<(&str, &str)> {

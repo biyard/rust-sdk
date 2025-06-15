@@ -88,6 +88,7 @@ pub enum TokenScheme {
     Usersig,
     XServerKey,
     Secret,
+    Session,
 }
 impl std::fmt::Display for TokenScheme {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -96,6 +97,7 @@ impl std::fmt::Display for TokenScheme {
             TokenScheme::Usersig => write!(f, "Usersig"),
             TokenScheme::XServerKey => write!(f, "X-Server-Key"),
             TokenScheme::Secret => write!(f, "Secret"),
+            TokenScheme::Session => write!(f, "Session"),
         }
     }
 }
@@ -109,6 +111,7 @@ impl TryFrom<&str> for TokenScheme {
             "usersig" => Ok(TokenScheme::Usersig),
             "x-server-key" => Ok(TokenScheme::XServerKey),
             "secret" => Ok(TokenScheme::Secret),
+            "session" => Ok(TokenScheme::Session),
             _ => Err(format!("Invalid TokenScheme: {}", value)),
         }
     }
