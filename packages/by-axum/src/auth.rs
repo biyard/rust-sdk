@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use tower_sessions::Session;
 
 static mut AUTH_CONFIG: Option<AuthConfig> = None;
+pub const USER_SESSION_KEY: &str = "user_session";
 
 pub fn set_auth_config(secret: AuthConfig) {
     unsafe {
@@ -78,21 +79,23 @@ pub async fn authorization_middleware(
     next: Next,
 ) -> Result<Response<Body>, StatusCode> {
     tracing::debug!("Authorization middleware {:?}", req.uri());
+    let session = req.extensions().get::<Session>().cloned();
 
-    if let Some(session) = req.extensions().get::<Session>() {
-        if let Ok(Some(user_session)) = session.get::<UserSession>("user_session").await {
+    let auth = if let Some(ref session) = session {
+        if let Ok(Some(user_session)) = session.get::<UserSession>(USER_SESSION_KEY).await {
             tracing::debug!("User session found: {:?}", user_session);
-            req.extensions_mut()
-                .insert(Some(Authorization::Session(user_session)));
-            return Ok(next.run(req).await);
+            Some(Authorization::Session(user_session))
+        } else {
+            None
         }
-    }
-
-    // Extract token information first without modifying req
-    let token_info = extract_auth_token(&req);
+    } else {
+        None
+    };
 
     // Process the token if available
-    if let Some((scheme, value)) = token_info {
+    let auth = if let Some(auth) = auth {
+        Some(auth)
+    } else if let Some((scheme, value)) = extract_auth_token(&req) {
         if let Ok(token_scheme) = TokenScheme::try_from(scheme) {
             tracing::debug!("Token scheme: {:?}", token_scheme);
 
@@ -110,12 +113,21 @@ pub async fn authorization_middleware(
                 TokenScheme::Session => None,
             };
 
-            req.extensions_mut().insert(ext);
-            return Ok(next.run(req).await);
+            ext
+        } else {
+            None
         }
+    } else {
+        None
+    };
+    req.extensions_mut().insert(auth);
+
+    let mut res = next.run(req).await;
+    if let Some(session) = session {
+        res.extensions_mut().insert(session);
     }
-    req.extensions_mut().insert(None::<Authorization>);
-    Ok(next.run(req).await)
+
+    return Ok(res);
 }
 /// Extracts authentication token from request headers
 /// Prioritizes Authorization header over Cookie header
