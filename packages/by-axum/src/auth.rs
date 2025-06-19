@@ -58,6 +58,7 @@ pub enum Authorization {
 pub struct UserSession {
     pub user_id: i64,
     pub principal: String,
+    pub email: String,
 }
 
 /// Authorization middleware
