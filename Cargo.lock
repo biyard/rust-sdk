@@ -1047,7 +1047,6 @@ name = "by-axum"
 version = "0.2.14"
 dependencies = [
  "aide",
- "async-trait",
  "axum 0.8.4",
  "by-types",
  "dioxus-aws",
