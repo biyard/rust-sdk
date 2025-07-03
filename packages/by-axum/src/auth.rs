@@ -15,6 +15,13 @@ use tower_sessions::Session;
 
 static mut AUTH_CONFIG: Option<AuthConfig> = None;
 pub const USER_SESSION_KEY: &str = "user_session";
+pub static mut AUTH_TOKEN_KEY: &str = "auth_token";
+
+pub fn set_auth_token_key(key: &'static str) {
+    unsafe {
+        AUTH_TOKEN_KEY = key;
+    }
+}
 
 pub fn set_auth_config(secret: AuthConfig) {
     unsafe {
@@ -164,7 +171,7 @@ fn extract_from_cookie_header(req: &Request) -> Option<(&str, &str)> {
                 .map(|s| s.trim())
                 .find_map(|cookie_pair| {
                     cookie_pair.split_once('=').and_then(|(name, value)| {
-                        if name.trim() == "auth_token" {
+                        if name.trim() == unsafe { AUTH_TOKEN_KEY } {
                             let value = value.trim();
                             value.split_once(' ').map(|(scheme, token)| (scheme, token))
                         } else {
