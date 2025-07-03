@@ -8,7 +8,5 @@ repository = "https://github.com/biyard/rust-sdk/tree/main/packages/btracing"
 description = "tracing logger interacting with notification"
 
 [dependencies]
-dioxus.workspace = true
-gloo-timers = { version = "0.3.0", features = ["futures"] }
 tracing = "0.1.41"
 serde.workspace = true

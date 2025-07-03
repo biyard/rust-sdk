@@ -909,14 +909,8 @@ dependencies = [
  "bigdecimal",
  "btracing",
  "by-axum",
- "by-components",
  "by-macros",
  "by-types",
- "dioxus",
- "dioxus-aws",
- "dioxus-fullstack",
- "dioxus-logger 0.5.1",
- "dioxus-popup",
  "dioxus-translate",
  "reqwest",
  "rest-api",
@@ -1030,8 +1024,6 @@ dependencies = [
 name = "btracing"
 version = "0.1.2"
 dependencies = [
- "dioxus",
- "gloo-timers",
  "serde",
  "tracing",
 ]
@@ -1774,12 +1766,10 @@ dependencies = [
  "dioxus-history",
  "dioxus-hooks",
  "dioxus-html",
- "dioxus-liveview",
- "dioxus-logger 0.6.3",
+ "dioxus-logger",
  "dioxus-mobile",
  "dioxus-router",
  "dioxus-signals",
- "dioxus-ssr",
  "dioxus-web",
  "manganis",
  "serde",
@@ -2109,45 +2099,6 @@ dependencies = [
  "dioxus-rsx",
  "dioxus-signals",
  "warnings",
-]
-
-[[package]]
-name = "dioxus-liveview"
-version = "0.6.3"
-source = "git+https://github.com/hackartists/dioxus.git#663fa8212d180a0c9a774f106ac109c0880ce4c1"
-dependencies = [
- "axum 0.7.9",
- "dioxus-cli-config",
- "dioxus-core",
- "dioxus-devtools",
- "dioxus-document",
- "dioxus-history",
- "dioxus-html",
- "dioxus-interpreter-js",
- "futures-channel",
- "futures-util",
- "generational-box",
- "rustc-hash",
- "serde",
- "serde_json",
- "slab",
- "thiserror 1.0.69",
- "tokio",
- "tokio-stream",
- "tokio-util",
- "tracing",
-]
-
-[[package]]
-name = "dioxus-logger"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81fe09dc9773dc1f1bb0d38529203d6555d08f67aadca5cf955ac3d1a9e69880"
-dependencies = [
- "console_error_panic_hook",
- "tracing",
- "tracing-subscriber",
- "tracing-wasm",
 ]
 
 [[package]]
@@ -3149,18 +3100,6 @@ dependencies = [
  "thiserror 1.0.69",
  "wasm-bindgen",
  "web-sys",
-]
-
-[[package]]
-name = "gloo-timers"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbb143cf96099802033e0d4f4963b19fd2e0b728bcf076cd9cf7f6634f092994"
-dependencies = [
- "futures-channel",
- "futures-core",
- "js-sys",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -5679,7 +5618,6 @@ dependencies = [
  "base64 0.22.1",
  "candid",
  "chrono",
- "dioxus-fullstack",
  "gloo-net",
  "reqwest",
  "ring",

@@ -17,15 +17,15 @@ serde_json.workspace = true
 tracing = "0.1.41"
 validator = { version = "0.20.0", features = ["derive"] }
 dioxus-translate = { workspace = true, features = ["ko"] }
+btracing = { workspace = true }
 
 # Frontend
-dioxus-aws = { workspace = true, optional = true }
-btracing = { workspace = true, optional = true }
-dioxus = { workspace = true, optional = true }
-dioxus-fullstack = { workspace = true, optional = true }
-dioxus-popup = { workspace = true, optional = true }
-by-components = { workspace = true, optional = true }
-dioxus-logger = { workspace = true, optional = true }
+# dioxus-aws = { workspace = true, optional = true }
+# dioxus = { workspace = true, optional = true }
+# dioxus-fullstack = { workspace = true, optional = true }
+# dioxus-popup = { workspace = true, optional = true }
+# by-components = { workspace = true, optional = true }
+# dioxus-logger = { workspace = true, optional = true }
 
 # Backend
 by-axum = { workspace = true, optional = true }
@@ -37,28 +37,17 @@ serde_urlencoded = "0.7.1"
 
 [features]
 default = []
-fe = [
-    "dioxus-aws",
-    "btracing",
-    "dioxus",
-    "dioxus-fullstack",
-    "dioxus-popup",
-    "by-components",
-    "dioxus-logger",
-    "rest-api/web",
-]
-web = ["fe", "dioxus-aws/web", "dioxus/web", "dioxus-translate/web"]
-mobile = ["fe", "dioxus-aws/mobile", "dioxus/mobile", "dioxus-translate/web"]
 server = [
-    "be",
-    "dioxus-aws/server",
-    "dioxus/server",
-    "by-components",
-    "dioxus-logger",
-    "dioxus-popup",
+    "by-axum",
+    "schemars",
+    "sqlx",
+    "bigdecimal",
+    "aide",
+    "by-types/server",
+    "by-macros/server",
     "rest-api/server",
 ]
-lambda = ["dioxus-aws?/lambda", "by-axum?/lambda"]
+lambda = ["by-axum?/lambda"]
 be = [
     "by-axum",
     "schemars",
@@ -67,5 +56,4 @@ be = [
     "aide",
     "by-types/server",
     "by-macros/server",
-    "btracing",
 ]

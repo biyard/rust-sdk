@@ -1,4 +1,5 @@
 pub mod prelude {
+    pub use btracing;
     pub use by_macros;
     pub use by_macros::*;
     pub use by_types;
@@ -8,9 +9,6 @@ pub mod prelude {
 
     #[cfg(any(
         feature = "be",
-        feature = "fe",
-        feature = "web",
-        feature = "mobile",
         feature = "server",
         all(feature = "server", feature = "lambda")
     ))]
@@ -23,67 +21,9 @@ pub mod prelude {
 
     #[cfg(any(
         feature = "be",
-        feature = "fe",
-        feature = "web",
-        feature = "mobile",
         feature = "server",
         all(feature = "server", feature = "lambda")
     ))]
-    pub use btracing;
-    #[cfg(any(
-        feature = "fe",
-        feature = "web",
-        feature = "mobile",
-        feature = "server",
-        all(feature = "server", feature = "lambda")
-    ))]
-    pub use by_components;
-    #[cfg(any(
-        feature = "fe",
-        feature = "web",
-        feature = "mobile",
-        feature = "server",
-        all(feature = "server", feature = "lambda")
-    ))]
-    pub use dioxus;
-    #[cfg(any(
-        feature = "fe",
-        feature = "web",
-        feature = "mobile",
-        feature = "server",
-        all(feature = "server", feature = "lambda")
-    ))]
-    pub use dioxus::prelude::*;
-    #[cfg(any(
-        feature = "fe",
-        feature = "web",
-        feature = "mobile",
-        feature = "server",
-        all(feature = "server", feature = "lambda")
-    ))]
-    pub use dioxus_aws;
-    #[cfg(any(
-        feature = "fe",
-        feature = "web",
-        feature = "mobile",
-        feature = "server",
-        all(feature = "server", feature = "lambda")
-    ))]
-    pub use dioxus_logger;
-    #[cfg(any(
-        feature = "fe",
-        feature = "web",
-        feature = "mobile",
-        feature = "server",
-        all(feature = "server", feature = "lambda")
-    ))]
-    pub use dioxus_popup;
-
-    #[cfg(any(feature = "server", all(feature = "server", feature = "lambda")))]
-    pub use dioxus::fullstack;
-    #[cfg(any(feature = "server", all(feature = "server", feature = "lambda")))]
-    pub use dioxus::fullstack::prelude::*;
-
     #[cfg(any(feature = "be", all(feature = "be", feature = "lambda")))]
     pub use aide;
     #[cfg(any(feature = "be", all(feature = "be", feature = "lambda")))]
