@@ -22,6 +22,9 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import * as elbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import * as event_targets from "aws-cdk-lib/aws-events-targets";
 import * as events from "aws-cdk-lib/aws-events";
+import * as sqs from "aws-cdk-lib/aws-sqs";
+import * as lambdaEventSources from "aws-cdk-lib/aws-lambda-event-sources";
+
 import {
   AwsLogDriver,
   Compatibility,
@@ -67,6 +70,7 @@ export class CdkStack extends cdk.Stack {
     let createRds = process.env.CREATE_RDS === "true";
     let enableCron = process.env.ENABLE_CRON === "true";
     let enableCdn = process.env.ENABLE_CDN !== "false";
+    let enableSQSWorker = process.env.ENABLE_SQS_WORKER === "true";
     let containerPort = Number(process.env.CONTAINER_PORT || "3000");
     let desiredCount = Number(process.env.DESIRED_COUNT || "1");
     let enableService = process.env.ENABLE_SERVICE === "false";
@@ -127,7 +131,7 @@ export class CdkStack extends cdk.Stack {
           {
             hostedZoneId: hostzedZoneId,
             zoneName: hostedZoneDomainName,
-          },
+          }
         );
       } else {
         hostedZone = route53.HostedZone.fromLookup(this, "HostedZone", {
@@ -142,7 +146,7 @@ export class CdkStack extends cdk.Stack {
           domainName: domain,
           hostedZone,
           region: "us-east-1",
-        },
+        }
       );
 
       distributionProps = {
@@ -158,6 +162,35 @@ export class CdkStack extends cdk.Stack {
         domainNames: [domain],
         certificate,
       };
+    }
+
+    if (enableSQSWorker) {
+      func = new lambda.Function(this, "Function", {
+        runtime: lambda.Runtime.PROVIDED_AL2023,
+        code: lambda.Code.fromAsset(codePath),
+        handler: "bootstrap",
+        environment: {
+          NO_COLOR: "true",
+        },
+        memorySize: 512,
+        timeout: cdk.Duration.seconds(30),
+      });
+
+      const queue = new sqs.Queue(this, "Queue", {
+        visibilityTimeout: cdk.Duration.seconds(300),
+        retentionPeriod: cdk.Duration.days(14),
+        fifo: false,
+      });
+
+      func.addEventSource(
+        new lambdaEventSources.SqsEventSource(queue, {
+          batchSize: 10,
+          maxBatchingWindow: cdk.Duration.seconds(5),
+          reportBatchItemFailures: true,
+        })
+      );
+
+      queue.grantConsumeMessages(func);
     }
 
     if (enableLambda) {
@@ -184,7 +217,7 @@ export class CdkStack extends cdk.Stack {
 
         if (schedule === "") {
           console.error(
-            "SCHEDULE is required ex. SCHEDULE='cron(0 15 * * ? *)'",
+            "SCHEDULE is required ex. SCHEDULE='cron(0 15 * * ? *)'"
           );
           process.exit(1);
         }
@@ -359,8 +392,8 @@ export class CdkStack extends cdk.Stack {
 
       taskExecutionRole.addManagedPolicy(
         iam.ManagedPolicy.fromAwsManagedPolicyName(
-          "service-role/AmazonECSTaskExecutionRolePolicy",
-        ),
+          "service-role/AmazonECSTaskExecutionRolePolicy"
+        )
       );
 
       taskExecutionRole.addToPolicy(
@@ -372,7 +405,7 @@ export class CdkStack extends cdk.Stack {
             "ecr:BatchGetImage",
           ],
           resources: ["*"],
-        }),
+        })
       );
 
       const taskDefinition = new TaskDefinition(this, "FargateTask", {
@@ -395,7 +428,7 @@ export class CdkStack extends cdk.Stack {
         const repository = Repository.fromRepositoryName(
           this,
           "FetcherRepository",
-          repoName,
+          repoName
         );
 
         options.image = ContainerImage.fromEcrRepository(repository, commit);
@@ -461,7 +494,7 @@ export class CdkStack extends cdk.Stack {
             timeout: cdk.Duration.seconds(5),
             healthyHttpCodes: "200",
           },
-        },
+        }
       );
 
       listener.addAction("HttpDefaultAction", {
@@ -481,7 +514,7 @@ export class CdkStack extends cdk.Stack {
         const c = new opensearchserverless.CfnCollection(
           this,
           `${collection.name}-collection`,
-          collection,
+          collection
         );
 
         const encPolicy = new opensearchserverless.CfnSecurityPolicy(
@@ -491,7 +524,7 @@ export class CdkStack extends cdk.Stack {
             name: `${collection.name}-collection-policy`,
             policy: `{"Rules":[{"ResourceType":"collection","Resource":["collection/${collection.name}"]}],"AWSOwnedKey":true}`,
             type: "encryption",
-          },
+          }
         );
         c.addDependency(encPolicy);
 
@@ -503,7 +536,7 @@ export class CdkStack extends cdk.Stack {
             name: `${collection.name}-network-policy`,
             policy: `[{"Rules":[{"ResourceType":"collection","Resource":["collection/${collection.name}"]}, {"ResourceType":"dashboard","Resource":["collection/${collection.name}"]}],"AllowFromPublic":true}]`,
             type: "network",
-          },
+          }
         );
         c.addDependency(netPolicy);
 
@@ -520,7 +553,7 @@ export class CdkStack extends cdk.Stack {
           new iam.PolicyStatement({
             actions: ["aoss:*"],
             resources: collections,
-          }),
+          })
         );
       }
     }
@@ -542,7 +575,7 @@ export class CdkStack extends cdk.Stack {
       securityGroup.addIngressRule(
         ec2.Peer.anyIpv4(),
         ec2.Port.tcp(5432),
-        "Allow PostgreSQL access from anywhere",
+        "Allow PostgreSQL access from anywhere"
       );
 
       const cluster = new rds.DatabaseCluster(this, "Database", {
@@ -562,7 +595,7 @@ export class CdkStack extends cdk.Stack {
         defaultDatabaseName: `${project}`,
         credentials: rds.Credentials.fromPassword(
           project,
-          cdk.SecretValue.unsafePlainText(adminPassword),
+          cdk.SecretValue.unsafePlainText(adminPassword)
         ),
         deletionProtection: true,
       });
@@ -592,7 +625,7 @@ export class CdkStack extends cdk.Stack {
 
     if (!createRds && enableRds) {
       console.error(
-        "creating an individual db cluster for service is not recommended. Instead of it, you manually create a table in `ENV` database cluster. If you want to create a new individual db cluster, set CREATE_RDS=true",
+        "creating an individual db cluster for service is not recommended. Instead of it, you manually create a table in `ENV` database cluster. If you want to create a new individual db cluster, set CREATE_RDS=true"
       );
       process.exit(1);
 
@@ -612,7 +645,7 @@ export class CdkStack extends cdk.Stack {
       securityGroup.addIngressRule(
         ec2.Peer.anyIpv4(),
         ec2.Port.tcp(5432),
-        "Allow PostgreSQL access from anywhere",
+        "Allow PostgreSQL access from anywhere"
       );
 
       const cluster = new rds.DatabaseCluster(this, "Database", {
@@ -632,7 +665,7 @@ export class CdkStack extends cdk.Stack {
         defaultDatabaseName: `${project}`.replace("-", "").replace("_", ""),
         credentials: rds.Credentials.fromPassword(
           project.replace("-", "").replace("_", ""),
-          cdk.SecretValue.unsafePlainText(adminPassword),
+          cdk.SecretValue.unsafePlainText(adminPassword)
         ),
         deletionProtection: true,
       });
@@ -664,7 +697,7 @@ export class CdkStack extends cdk.Stack {
       const cf = new cloudfront.Distribution(
         this,
         "Distribution",
-        distributionProps,
+        distributionProps
       );
 
       const zone = route53.HostedZone.fromHostedZoneAttributes(
@@ -673,20 +706,20 @@ export class CdkStack extends cdk.Stack {
         {
           zoneName: domain,
           hostedZoneId: hostedZone.hostedZoneId,
-        },
+        }
       );
 
       new route53.ARecord(this, "IpV4Record", {
         zone,
         target: route53.RecordTarget.fromAlias(
-          new targets.CloudFrontTarget(cf),
+          new targets.CloudFrontTarget(cf)
         ),
       });
 
       new route53.AaaaRecord(this, "IpV6Record", {
         zone,
         target: route53.RecordTarget.fromAlias(
-          new targets.CloudFrontTarget(cf),
+          new targets.CloudFrontTarget(cf)
         ),
       });
     }
