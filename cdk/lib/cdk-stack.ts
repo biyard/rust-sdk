@@ -168,7 +168,7 @@ export class CdkStack extends cdk.Stack {
         environment: {
           NO_COLOR: "true",
         },
-        memorySize: 512,
+        memorySize: 128,
         timeout: cdk.Duration.seconds(30),
       });
 
@@ -392,6 +392,11 @@ export class CdkStack extends cdk.Stack {
       if (registry) {
         options.image = ContainerImage.fromRegistry(registry);
       } else {
+        if (repoName === "" || commit === "") {
+          console.error("REPO_NAME and COMMIT are required");
+          process.exit(1);
+        }
+
         const repository = Repository.fromRepositoryName(
           this,
           "FetcherRepository",
