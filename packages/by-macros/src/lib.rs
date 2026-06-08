@@ -3,19 +3,31 @@ extern crate proc_macro;
 mod action;
 mod api_model;
 mod api_model_struct;
+mod dynamo_entity;
+mod dynamo_enum;
 mod enum_prop;
+mod mcp_tool;
 pub(crate) mod parse_queryable_fields;
+mod qdrant_entity;
+mod server_fn;
 #[cfg(feature = "server")]
 mod query_builder_functions;
 mod query_display;
+mod rest_error;
 #[cfg(feature = "server")]
 mod sql_model;
+mod sub_partition;
+mod write_file;
 
 use api_model::api_model_impl;
+use dynamo_entity::dynamo_entity_impl;
+use dynamo_enum::dynamo_enum_impl;
 use enum_prop::enum_prop_impl;
 use proc_macro::TokenStream;
 use query_display::query_display_impl;
 use quote::{quote, ToTokens};
+use rest_error::rest_error_impl;
+use sub_partition::sub_partition_impl;
 use syn::{parse_macro_input, Data, DataEnum, DeriveInput, Fields};
 
 #[proc_macro_derive(QueryDisplay)]
@@ -52,6 +64,83 @@ pub fn enum_prop_derive(input: TokenStream) -> TokenStream {
         .with_target(false)
         .try_init();
     enum_prop_impl(input)
+}
+
+#[proc_macro_derive(DynamoEntity, attributes(dynamo))]
+pub fn dynamo_entity_derive(input: TokenStream) -> TokenStream {
+    let _ = tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .with_file(true)
+        .with_line_number(true)
+        .with_thread_ids(true)
+        .with_target(false)
+        .try_init();
+    dynamo_entity_impl(input)
+}
+
+#[proc_macro_derive(QdrantEntity, attributes(qdrant))]
+pub fn qdrant_entity_derive(input: TokenStream) -> TokenStream {
+    let _ = tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .with_file(true)
+        .with_line_number(true)
+        .with_thread_ids(true)
+        .with_target(false)
+        .try_init();
+    qdrant_entity::qdrant_entity_impl(input)
+}
+
+#[proc_macro_derive(DummyDynamoEntity, attributes(dynamo))]
+pub fn dummy_dynamo_entity_derive(_input: TokenStream) -> TokenStream {
+    TokenStream::new()
+}
+
+#[proc_macro_derive(DummyJsonSchema)]
+pub fn dummy_json_schema_derive(_input: TokenStream) -> TokenStream {
+    TokenStream::new()
+}
+
+#[proc_macro_derive(DummyOperationIo)]
+pub fn dummy_operation_io_derive(_input: TokenStream) -> TokenStream {
+    TokenStream::new()
+}
+
+#[proc_macro_derive(SubPartition)]
+pub fn sub_partition_derive(input: TokenStream) -> TokenStream {
+    let _ = tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .with_file(true)
+        .with_line_number(true)
+        .with_thread_ids(true)
+        .with_target(false)
+        .try_init();
+    sub_partition_impl(input)
+}
+
+#[proc_macro_derive(DynamoEnum, attributes(dynamo_enum))]
+pub fn dynamo_enum_derive(input: TokenStream) -> TokenStream {
+    let _ = tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .with_file(true)
+        .with_line_number(true)
+        .with_thread_ids(true)
+        .with_target(false)
+        .try_init();
+    dynamo_enum_impl(input)
+}
+
+/// #[derive(RestError)]
+/// #[rest_error(status = 401, code = 1000)]
+#[proc_macro_derive(RestError, attributes(rest_error))]
+pub fn rest_error_derive(input: TokenStream) -> TokenStream {
+    let _ = tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .with_file(true)
+        .with_line_number(true)
+        .with_thread_ids(true)
+        .with_target(false)
+        .try_init();
+    rest_error_impl(input)
 }
 
 #[proc_macro_derive(ApiModel)]
@@ -194,6 +283,14 @@ pub fn derive_dioxus_controller(input: TokenStream) -> TokenStream {
                             (self.#field_name)()
                         }
                     }
+                } else if field_type.starts_with("ReadSignal") {
+                    let t = field_type.trim_start_matches("ReadSignal<");
+                    let t: proc_macro2::TokenStream = t[..t.len() - 1].parse().unwrap();
+                    quote! {
+                        pub fn #field_name(&self) -> #t {
+                            (self.#field_name)()
+                        }
+                    }
                 } else if field_type.starts_with("ReadOnlySignal") {
                     let t = field_type.trim_start_matches("ReadOnlySignal<");
                     let t: proc_macro2::TokenStream = t[..t.len() - 1].parse().unwrap();
@@ -219,6 +316,15 @@ pub fn derive_dioxus_controller(input: TokenStream) -> TokenStream {
                             Ok(self.#field_name.suspend()?())
                         }
                     }
+                } else if field_type.starts_with("Loader<") {
+                    let t = field_type.trim_start_matches("Loader<");
+                    let t: proc_macro2::TokenStream = t[..t.len() - 1].parse().unwrap();
+
+                    quote! {
+                        pub fn #field_name(&self) -> #t {
+                            (self.#field_name)()
+                        }
+                    }
                 } else {
                     continue;
                 };
@@ -241,7 +347,67 @@ pub fn derive_dioxus_controller(input: TokenStream) -> TokenStream {
     expanded.into()
 }
 
+/// Marks a Dioxus server function handler as an MCP tool.
+///
+/// This macro extracts the function body into a `{name}_mcp_impl` function that can be
+/// called directly from the MCP server, while keeping the original handler intact for
+/// the `#[post]`/`#[get]` macro to process.
+///
+/// # Usage
+///
+/// ```rust,ignore
+/// #[mcp_tool(name = "create_post", description = "Create and publish a new post.")]
+/// #[post("/api/posts", user: User)]
+/// pub async fn create_post_handler(team_id: Option<TeamPartition>) -> Result<CreatePostResponse> {
+///     // body is extracted into create_post_handler_mcp_impl(user, team_id)
+/// }
+/// ```
+///
+/// The generated `create_post_handler_mcp_impl` has the extracted params (e.g., `user: User`)
+/// as explicit arguments, so the MCP server can call it with `self.user`.
+#[proc_macro_attribute]
+pub fn mcp_tool(attr: TokenStream, item: TokenStream) -> TokenStream {
+    mcp_tool::mcp_tool_impl(attr.into(), item.into()).into()
+}
+
+// HTTP method attribute macros — shadow `dioxus::fullstack::{get,post,...}`.
+// Under `cfg(not(tauri-web))` they forward unchanged to dioxus's macro so
+// server + browser-client code is generated the same way. Under
+// `cfg(tauri-web)` they emit a reqwest stub that calls
+// `crate::common::fullstack::server_fn::<method>` so the bundle no longer
+// depends on dioxus-fullstack's RPC transport (and therefore not on
+// dioxus-web/hydrate).
+
+#[proc_macro_attribute]
+pub fn get(attr: TokenStream, item: TokenStream) -> TokenStream {
+    server_fn::server_fn_impl("GET", attr, item)
+}
+
+#[proc_macro_attribute]
+pub fn post(attr: TokenStream, item: TokenStream) -> TokenStream {
+    server_fn::server_fn_impl("POST", attr, item)
+}
+
+#[proc_macro_attribute]
+pub fn put(attr: TokenStream, item: TokenStream) -> TokenStream {
+    server_fn::server_fn_impl("PUT", attr, item)
+}
+
+#[proc_macro_attribute]
+pub fn patch(attr: TokenStream, item: TokenStream) -> TokenStream {
+    server_fn::server_fn_impl("PATCH", attr, item)
+}
+
+#[proc_macro_attribute]
+pub fn delete(attr: TokenStream, item: TokenStream) -> TokenStream {
+    server_fn::server_fn_impl("DELETE", attr, item)
+}
+
 pub(crate) fn save_file(st_name: &str, output: &str) {
+    if option_env!("WRITE_OUTPUT").is_none() {
+        return;
+    }
+
     let dir_path = match option_env!("API_MODEL_ARTIFACT_DIR") {
         Some(dir) => dir.to_string(),
         None => {

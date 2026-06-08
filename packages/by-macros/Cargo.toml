@@ -1,6 +1,6 @@
 [package]
 name = "by-macros"
-version = "0.6.9"
+version = "0.6.20"
 edition = "2021"
 description = "Biyard Macros"
 license = "Apache-2.0"
@@ -11,6 +11,7 @@ repository = "https://github.com/biyard/rust-sdk/tree/main/packages/by-macros"
 proc-macro = true
 
 [dependencies]
+Inflector = "0.11"
 bigdecimal = "0.4.7"
 convert_case = "0.7.1"
 indexmap = "2.7.1"
@@ -26,10 +27,7 @@ validator = { version = "0.20.0", features = ["derive"] }
 
 [dev-dependencies]
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
-rest-api.workspace = true
-by-axum.workspace = true
-reqwest = "0.12.12"
-by-types.workspace = true
+reqwest = "0.13"
 schemars.workspace = true
 tokio = { version = "1.43.0", features = ["full"] }
 sqlx = { version = "0.8.3", features = ["sqlite", "postgres", "runtime-tokio", "bigdecimal"] }

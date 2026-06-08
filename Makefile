@@ -1,4 +1,4 @@
-PACKAGES=by-types by-macros rest-api dioxus-aws easy-dynamodb by-axum by-components dioxus-oauth dioxus-popup dioxus-translate-types dioxus-translate-macro dioxus-translate google-wallet
+PACKAGES=by-macros
 
 setup:
 	cargo install mdbook

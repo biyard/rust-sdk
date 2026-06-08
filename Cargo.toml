@@ -11,58 +11,7 @@ repository = "https://github.com/biyard/rust-sdk"
 description = "Biyard Rust Development Kit"
 
 [workspace.dependencies]
-btracing = { path = "packages/btracing", version = "0.1.*" }
-by-components = { path = "packages/by-components", version = "0.1.*" }
-by-axum = { path = "packages/by-axum", version = "0.2.*" }
-by-types = { path = "packages/by-types", version = "0.3.*" }
-rest-api = { path = "packages/rest-api", version = "0.1.*" }
-dioxus-popup = { path = "packages/dioxus-popup", version = "0.1.*" }
-dioxus-aws = { path = "packages/dioxus-aws", version = "0.6.*" }
-easy-dynamodb = { path = "packages/easy-dynamodb", version = "0.1.*" }
-dioxus-translate = { path = "packages/dioxus-translate", version = "0.1.*" }
-dioxus-translate-types = { path = "packages/dioxus-translate-types", version = "0.1.*" }
-dioxus-translate-macro = { path = "packages/dioxus-translate-macro", version = "0.1.*" }
-by-macros = { path = "packages/by-macros", version = "0.6.*" }
+by-macros = { path = "packages/by-macros", version = "*" }
 dioxus-logger = { version = "0.5.0" }
-
-aide = { version = "0.14.2", features = [
-  "axum",
-  "axum-query",
-  "axum-extra",
-  "axum-extra-headers",
-  "axum-extra-query",
-  "axum-json",
-  "swagger",
-  "redoc",
-  "scalar",
-  "macros",
-] }
-axum = { version = "0.8.1", features = ["macros"] }
-schemars = { version = "0.8.10", features = ["uuid1"] }
-serde = { version = "1.0.197", features = ["derive"] }
-serde_json = "1.0.133"
-reqwest = { version = "0.12.12", features = ["blocking", "json", "multipart"] }
-
-dioxus = { version = "0.6.3", features = [
-  "router",
-  "fullstack",
-], git = "https://github.com/hackartists/dioxus.git" }
-dioxus-fullstack = { version = "0.6.3", git = "https://github.com/hackartists/dioxus.git" }
-dioxus-cli-config = { version = "0.6.3", git = "https://github.com/hackartists/dioxus.git" }
-dioxus-web = { version = "0.6.3", git = "https://github.com/hackartists/dioxus.git" }
-
-sqlx = { version = "0.8.3", features = [
-  "sqlite",
-  "postgres",
-  "runtime-tokio",
-  "time",
-  "bigdecimal",
-] }
-bigdecimal = "0.4.7"
-
-
-candid = "0.10"
-ic-cdk = "0.17"
-ic-cdk-timers = "0.11"
-
-gloo-net = { version = "0.6.0" }
+serde_json = "1"
+schemars = { version = "1", features = ["uuid1"] }
