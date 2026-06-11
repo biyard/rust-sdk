@@ -27,6 +27,11 @@ validator = { version = "0.20.0", features = ["derive"] }
 
 [dev-dependencies]
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+# Test fixtures reference by-types/by-axum/rest-api versions that were removed
+# from the workspace before being published, so pin the last workspace state.
+by-axum = { git = "https://github.com/biyard/rust-sdk.git", rev = "fdb8ab49bd08fd9ff263fe11381038c6d45d4ef9" }
+by-types = { git = "https://github.com/biyard/rust-sdk.git", rev = "fdb8ab49bd08fd9ff263fe11381038c6d45d4ef9" }
+rest-api = { git = "https://github.com/biyard/rust-sdk.git", rev = "fdb8ab49bd08fd9ff263fe11381038c6d45d4ef9" }
 reqwest = "0.13"
 schemars.workspace = true
 tokio = { version = "1.43.0", features = ["full"] }
