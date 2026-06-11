@@ -1,0 +1,22 @@
+[package]
+name = "dioxus-gtag"
+version = "0.1.0"
+edition = "2021"
+description = "Google Analytics (gtag.js) context provider and hooks for Dioxus"
+license = "Apache-2.0"
+keywords = ["dioxus", "analytics", "gtag", "google-analytics"]
+repository = "https://github.com/biyard/rust-sdk/tree/main/packages/dioxus-gtag"
+authors.workspace = true
+
+[dependencies]
+by-macros.workspace = true
+serde_json.workspace = true
+dioxus = { version = "0.7", default-features = false, features = [
+    "signals",
+    "hooks",
+    "document",
+] }
+
+[features]
+default = []
+router = ["dioxus/router"]
