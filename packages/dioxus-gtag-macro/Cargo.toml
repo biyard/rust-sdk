@@ -1,0 +1,17 @@
+[package]
+name = "dioxus-gtag-macro"
+version = "0.1.0"
+edition = "2021"
+description = "Derive macro for dioxus-gtag typed events"
+license = "Apache-2.0"
+keywords = ["dioxus", "analytics", "gtag", "macros"]
+repository = "https://github.com/biyard/rust-sdk/tree/main/packages/dioxus-gtag-macro"
+authors.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "2", features = ["full"] }

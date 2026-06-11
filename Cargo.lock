@@ -944,7 +944,17 @@ version = "0.1.0"
 dependencies = [
  "by-macros",
  "dioxus",
+ "dioxus-gtag-macro",
  "serde_json",
+]
+
+[[package]]
+name = "dioxus-gtag-macro"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
 ]
 
 [[package]]

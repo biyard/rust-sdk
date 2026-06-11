@@ -76,7 +76,37 @@ rsx! {
 }
 ```
 
-For nested payloads (e.g. GA4 `items` arrays), use `event_json`:
+### Typed events
+
+Define events as structs with `#[derive(GtagEvent)]` and send them with
+`send` — the event name defaults to the snake_case struct name:
+
+```rust
+use dioxus_gtag::GtagEvent;
+
+#[derive(GtagEvent)]
+#[gtag(name = "purchase")]              // optional; defaults to "purchase" anyway
+pub struct Purchase {
+    pub value: f64,
+    pub currency: String,
+    #[gtag(rename = "item_id")]         // param key override
+    pub sku: String,
+    #[gtag(skip)]                       // not sent
+    pub internal: bool,
+}
+
+gtag.send(&Purchase {
+    value: 12000.0,
+    currency: "KRW".to_string(),
+    sku: "SKU_1".to_string(),
+    internal: true,
+});
+```
+
+Field values are serialized with serde, so nested types work as long as they
+implement `serde::Serialize`.
+
+For ad-hoc nested payloads (e.g. GA4 `items` arrays), use `event_json`:
 
 ```rust
 gtag.event_json("purchase", serde_json::json!({

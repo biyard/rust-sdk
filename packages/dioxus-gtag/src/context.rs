@@ -86,6 +86,19 @@ impl UseGtagContext {
         self.push(js::event(name, &params));
     }
 
+    /// Sends a typed event defined with `#[derive(GtagEvent)]`.
+    ///
+    /// ```rust,ignore
+    /// #[derive(GtagEvent)]
+    /// #[gtag(name = "purchase")]
+    /// struct Purchase { value: f64, currency: String }
+    ///
+    /// gtag.send(&Purchase { value: 12000.0, currency: "KRW".into() });
+    /// ```
+    pub fn send(&self, event: &impl crate::GtagEvent) {
+        self.push(js::event(event.event_name(), &event.params()));
+    }
+
     /// Sends a `page_view` event. With the `router` feature,
     /// `use_gtag_page_view` calls this automatically on route changes.
     pub fn page_view(&self, path: &str, title: Option<&str>) {

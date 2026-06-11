@@ -37,6 +37,7 @@
 mod config;
 mod consent;
 mod context;
+mod event;
 mod js;
 #[cfg(feature = "router")]
 mod router;
@@ -48,9 +49,17 @@ pub use context::{
     consume_gtag_context, provide_gtag_context, use_gtag_context, use_gtag_context_provider,
     use_gtag_context_provider_with, UseGtagContext,
 };
+pub use dioxus_gtag_macro::GtagEvent;
+pub use event::GtagEvent;
 #[cfg(feature = "router")]
 pub use router::use_gtag_page_view;
 pub use value::GtagValue;
+
+/// Internal re-exports for `#[derive(GtagEvent)]`-generated code. Not public API.
+#[doc(hidden)]
+pub mod __private {
+    pub use serde_json;
+}
 
 pub mod prelude {
     pub use crate::config::GtagConfig;
@@ -59,6 +68,7 @@ pub mod prelude {
         consume_gtag_context, provide_gtag_context, use_gtag_context, use_gtag_context_provider,
         use_gtag_context_provider_with, UseGtagContext,
     };
+    pub use crate::GtagEvent; // trait and derive macro
     #[cfg(feature = "router")]
     pub use crate::router::use_gtag_page_view;
     pub use crate::value::GtagValue;
