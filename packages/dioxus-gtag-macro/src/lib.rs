@@ -109,11 +109,24 @@ pub fn derive_gtag_event(input: TokenStream) -> TokenStream {
         if skip {
             continue;
         }
+        // Fail fast in debug builds so serialization bugs surface during
+        // testing; in release, analytics must never take the app down, so
+        // fall back to null.
         inserts.push(quote! {
             params.insert(
                 #key.to_string(),
-                ::dioxus_gtag::__private::serde_json::to_value(&self.#ident)
-                    .unwrap_or(::dioxus_gtag::__private::serde_json::Value::Null),
+                match ::dioxus_gtag::__private::serde_json::to_value(&self.#ident) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        if cfg!(debug_assertions) {
+                            panic!(
+                                "GtagEvent: failed to serialize param `{}`: {}",
+                                #key, err
+                            );
+                        }
+                        ::dioxus_gtag::__private::serde_json::Value::Null
+                    }
+                },
             );
         });
     }
