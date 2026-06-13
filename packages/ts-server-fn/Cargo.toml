@@ -1,0 +1,17 @@
+[package]
+name = "ts-server-fn"
+version = "0.1.0"
+edition = "2021"
+description = "Wrap dioxus-fullstack server functions and emit a type-safe TypeScript client at macro-expansion time."
+license = "Apache-2.0"
+keywords = ["macros", "api", "typescript", "codegen"]
+repository = "https://github.com/biyard/rust-sdk/tree/main/packages/ts-server-fn"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1.0.93"
+quote = "1.0.38"
+syn = { version = "2.0.96", features = ["full", "extra-traits"] }
+convert_case = "0.7.1"

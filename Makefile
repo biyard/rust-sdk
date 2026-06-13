@@ -1,4 +1,4 @@
-PACKAGES=by-macros dioxus-gtag-macro dioxus-gtag
+PACKAGES=by-macros dioxus-gtag-macro dioxus-gtag ts-server-fn
 
 setup:
 	cargo install mdbook
