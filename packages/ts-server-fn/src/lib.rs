@@ -180,6 +180,31 @@ mod snapshot_tests {
     }
 
     #[test]
+    fn result_alias_is_unwrapped() {
+        // Project-local `Result` aliases (e.g. `use feature::types::Result
+        // as CollabResult;`) are written `CollabResult<T>` at the call
+        // site. The error half must still be stripped to `T`, exactly as
+        // for the std `Result<T, E>`.
+        let out = render_handler(
+            "GET",
+            r#""/api/rooms/{room_id}/score", user: User"#,
+            r#"pub async fn get_score(room_id: String, user: User) -> RaResult<RoomScoreResponse> { unreachable!() }"#,
+        );
+        assert!(
+            out.contains("Promise<RoomScoreResponse>"),
+            "RaResult<RoomScoreResponse> → RoomScoreResponse: {out}"
+        );
+        assert!(
+            out.contains(r#"import type { RoomScoreResponse } from "../types/RoomScoreResponse";"#),
+            "imports the unwrapped success type, not the alias: {out}"
+        );
+        assert!(
+            !out.contains("RaResult"),
+            "the alias name never leaks into the TS output: {out}"
+        );
+    }
+
+    #[test]
     fn vec_and_optional_param_types() {
         let out = render_handler(
             "POST",
