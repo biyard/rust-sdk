@@ -32,6 +32,38 @@ pub struct RenderedTs {
     pub source: String,
 }
 
+/// Whether a query arg is a single scalar key (`?after=…`) vs a struct
+/// whose fields are flattened into the query string (`?{q}`).
+///
+/// Scalars map to `string` / `number` / `boolean` (optionally wrapped in
+/// `Option`). Anything else — a named DTO like `ListDriveFilesQuery` — is
+/// a whole-struct query arg and gets object-flattened by the renderer.
+fn is_scalar_query_ty(ty: &syn::Type) -> bool {
+    // Peel one `Option<…>` so `Option<String>` counts as a scalar.
+    let inner = if crate::route::is_option_type(ty) {
+        option_inner(ty).unwrap_or(ty)
+    } else {
+        ty
+    };
+    matches!(ts_type(inner).as_str(), "string" | "number" | "boolean")
+}
+
+/// Inner `T` of `Option<T>`, by last path segment.
+fn option_inner(ty: &syn::Type) -> Option<&syn::Type> {
+    if let syn::Type::Path(tp) = ty {
+        if let Some(seg) = tp.path.segments.last() {
+            if seg.ident == "Option" {
+                if let syn::PathArguments::AngleBracketed(args) = &seg.arguments {
+                    if let Some(syn::GenericArgument::Type(inner)) = args.args.first() {
+                        return Some(inner);
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
 /// HTTP method → runtime client fn + whether it carries a body.
 fn runtime_fn(method: &str) -> (&'static str, bool) {
     match method {
@@ -109,12 +141,26 @@ pub fn render(method: &str, meta: &HandlerMeta) -> RenderedTs {
         for a in &query_args {
             let name = a.name.to_string();
             let cam = camel(&name);
-            if crate::route::is_option_type(&a.ty) {
-                body.push_str(&format!(
-                    "  if ({cam} !== null && {cam} !== undefined) __q.set(\"{name}\", String({cam}));\n"
-                ));
+            if is_scalar_query_ty(&a.ty) {
+                // `?after` / `?folder_id` — a single scalar query key.
+                if crate::route::is_option_type(&a.ty) {
+                    body.push_str(&format!(
+                        "  if ({cam} !== null && {cam} !== undefined) __q.set(\"{name}\", String({cam}));\n"
+                    ));
+                } else {
+                    body.push_str(&format!("  __q.set(\"{name}\", String({cam}));\n"));
+                }
             } else {
-                body.push_str(&format!("  __q.set(\"{name}\", String({cam}));\n"));
+                // `?{q}` — the whole struct is flattened into the query
+                // string (dioxus-fullstack / by-macros convention). Emit
+                // one key per own enumerable field, skipping null /
+                // undefined so `Option::None` fields are omitted exactly
+                // as the Rust client does.
+                body.push_str(&format!(
+                    "  for (const [__k, __v] of Object.entries({cam} as Record<string, unknown>)) {{\n\
+                     \x20   if (__v !== null && __v !== undefined) __q.set(__k, String(__v));\n\
+                     \x20 }}\n"
+                ));
             }
         }
         body.push_str(&format!(

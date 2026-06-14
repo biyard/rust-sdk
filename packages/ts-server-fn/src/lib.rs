@@ -205,6 +205,48 @@ mod snapshot_tests {
     }
 
     #[test]
+    fn whole_struct_query_is_flattened() {
+        // `?{q}` flattens the named struct's fields into the query
+        // string (dioxus-fullstack convention), rather than emitting a
+        // literal `q=` key. The param is still typed as the struct.
+        let out = render_handler(
+            "GET",
+            r#""/api/data-sources/{dsid}/files?{q}", user: User"#,
+            r#"pub async fn list_drive_files(dsid: String, q: ListDriveFilesQuery, user: User) -> Result<ListDriveFilesResponse, ApiError> { unreachable!() }"#,
+        );
+        assert!(
+            out.contains("listDriveFiles"),
+            "fn name camelCased: {out}"
+        );
+        assert!(
+            out.contains("q: ListDriveFilesQuery"),
+            "struct query arg keeps its named type as a param: {out}"
+        );
+        assert!(
+            out.contains("Object.entries(q as Record<string, unknown>)"),
+            "struct query arg is object-flattened into URLSearchParams: {out}"
+        );
+        assert!(
+            !out.contains(r#"__q.set("q""#),
+            "must NOT emit a literal `q=` key: {out}"
+        );
+    }
+
+    #[test]
+    fn scalar_query_still_uses_set() {
+        // `?folder_id` (Option<String>) stays a single scalar key.
+        let out = render_handler(
+            "GET",
+            r#""/api/rooms/{room_id}/classified-files?folder_id", user: User"#,
+            r#"pub async fn list_classified(room_id: String, folder_id: Option<String>, user: User) -> Result<ListClassifiedFilesResponse, ApiError> { unreachable!() }"#,
+        );
+        assert!(
+            out.contains(r#"if (folderId !== null && folderId !== undefined) __q.set("folder_id", String(folderId));"#),
+            "scalar Option query arg uses __q.set with the snake_case key: {out}"
+        );
+    }
+
+    #[test]
     fn vec_and_optional_param_types() {
         let out = render_handler(
             "POST",

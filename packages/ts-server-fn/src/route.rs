@@ -151,11 +151,16 @@ pub fn parse_path(path: &str) -> (String, Vec<String>, Vec<String>) {
         }
     }
 
+    // Query placeholders. Two accepted forms, both reduced to the bare
+    // arg name here so they match a handler arg by identity:
+    //   `?after&before`  → ["after", "before"]   (scalar keys)
+    //   `?{q}`            → ["q"]                 (whole-struct query;
+    //                        the renderer flattens the struct's fields)
     let query_args = query_part
         .map(|q| {
             q.split('&')
                 .filter(|s| !s.is_empty())
-                .map(|s| s.to_string())
+                .map(|s| s.trim_matches(|c| c == '{' || c == '}').to_string())
                 .collect()
         })
         .unwrap_or_default();
