@@ -1,39 +1,35 @@
-//! `ts-server-fn` — wrap dioxus-fullstack server functions and emit a
-//! type-safe TypeScript client at macro-expansion time.
+//! `ts-server-fn` — turn an annotated handler into a **pure axum route** and
+//! emit a type-safe TypeScript client at macro-expansion time.
 //!
 //! Each `#[get]/#[post]/#[put]/#[patch]/#[delete]` attribute:
 //!
-//! 1. **Re-emits the original dioxus-fullstack server fn unchanged.** The
-//!    macro re-attaches `#[::dioxus::fullstack::<method>(<original attr>)]`
-//!    to the function so dioxus generates the server handler + browser RPC
-//!    stub exactly as before. The server keeps working 100% — this crate is
-//!    a transparent wrapper.
+//! 1. **Server side** — rewrites the handler into idiomatic axum:
+//!    - the original fn is preserved as `__<name>_impl` (signature + body
+//!      unchanged — it keeps its real extractors: `User`, `Path`, `Query`,
+//!      `Json`, …);
+//!    - a public `async fn <name>(..) -> axum::response::Response` adapter is
+//!      generated that forwards the same extractors and maps the handler's
+//!      `Result<T, E>` to a response: `Ok → (200, Json(T))`,
+//!      `Err → (e.as_status_code(), Json(e))`;
+//!    - an `inventory::submit!` registers the route on `crate::__ts_api::
+//!      ApiRoute` so the consumer's `route::api_router()` can collect every
+//!      handler with no manual wiring.
 //!
-//! 2. **When `TS_SERVER_FN_PACKAGE_DIR` is set at the consumer's build
-//!    time**, renders a TypeScript client function for the handler and
-//!    writes it under that dir (one file per handler). The generated fn is
-//!    a thin typed wrapper over a hand-written `runtime/client.ts` that owns
-//!    transport, cookies, body-wrapping, and status→throw.
+//! 2. **TS side** — when `TS_SERVER_FN_PACKAGE_DIR` is set at the consumer's
+//!    build time, renders a typed TS client fn for the handler. Only
+//!    `Path`/`Query`/`Json` arguments are reflected; every other extractor
+//!    (`User`, `OptionalUser`, `Session`, …) is server-only and excluded.
+//!    The request body is the `Json<T>` payload itself (no `{ "req": … }`
+//!    wrapping).
 //!
-//! Attribute syntax matches dioxus's / by-macros' (see `route.rs`):
+//! ### Consumer contract
 //!
-//! ```ignore
-//!     #[post("/api/posts/{post_id}/comments?after", user: User)]
-//!     pub async fn add_comment(
-//!         post_id: FeedPartition,      // path
-//!         after: Option<String>,       // query (skipped when None)
-//!         req: AddCommentRequest,      // body → { "req": <value> }
-//!     ) -> Result<Comment> { ... }     // → Promise<Comment>
-//! ```
-//!
-//! Wire contract matched by the generated TS (see asset
-//! `common/fullstack/server_fn.rs`):
-//!   - URL = path template with `{}` substituted (each path arg
-//!     `encodeURIComponent`'d) + `?k=v` query (None skipped)
-//!   - POST/PUT/PATCH body = JSON object keyed by the body arg name:
-//!     `{ "<argName>": <value> }`
-//!   - 2xx = plain JSON of the return value; non-2xx = throw
-//!   - cookies via `credentials: 'include'`
+//! The expanded code references, in the **consumer** crate:
+//!   - `crate::__ts_api::ApiRoute { method: &'static str, path: &'static str,
+//!     register: fn(axum::Router) -> axum::Router }` + `inventory::collect!`
+//!   - `axum`, `inventory` as dependencies
+//!   - `AsStatusCode` in scope (method `e.as_status_code()`), which asset
+//!     re-exports through `crate::*`.
 
 mod route;
 mod tsgen;
@@ -41,53 +37,102 @@ mod write_ts;
 
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
-use quote::quote;
-use syn::{parse_macro_input, ItemFn};
+use quote::{format_ident, quote};
+use syn::{parse_macro_input, FnArg, ItemFn};
 
 use route::RouteAttr;
 
 /// Shared expansion for every HTTP-method attribute.
 fn server_fn_impl(method: &str, attr: TokenStream, item: TokenStream) -> TokenStream {
-    // Keep the original attribute token stream verbatim so we can re-attach
-    // the dioxus-fullstack macro byte-for-byte.
-    let attr2: TokenStream2 = attr.clone().into();
     let route = parse_macro_input!(attr as RouteAttr);
     let func = parse_macro_input!(item as ItemFn);
 
     // ── 1. Side effect: emit TS when generation is enabled ───────────
     if let Some(dir) = write_ts::package_dir() {
-        let meta = route::classify(
-            &route,
-            &func.sig.ident,
-            &func.sig.inputs,
-            &func.sig.output,
-        );
+        let meta = route::classify(&route, &func.sig.ident, &func.sig.inputs, &func.sig.output);
         let rendered = tsgen::render(method, &meta);
-        // Flat layout by default ("" feature segment). Phase 2's `make
-        // gen-ts` can group by module by passing a feature via a future
-        // attribute key; for the spike we write directly under handlers/.
         write_ts::write_handler(&dir, "", &rendered.fn_name_camel, &rendered.source);
     }
 
-    // ── 2. Re-emit the original server fn with the dioxus attribute ──
-    let dioxus_attr = method_path(method);
-    let expanded = quote! {
-        #[#dioxus_attr(#attr2)]
-        #func
-    };
-    expanded.into()
+    // ── 2. Emit the pure-axum route ─────────────────────────────────
+    expand_axum(method, &route, func).into()
 }
 
-/// The dioxus-fullstack attribute path for a method, as a token stream
-/// suitable for splicing into `#[ ... ]`.
-fn method_path(method: &str) -> TokenStream2 {
-    match method {
-        "GET" => quote! { ::dioxus::fullstack::get },
-        "POST" => quote! { ::dioxus::fullstack::post },
-        "PUT" => quote! { ::dioxus::fullstack::put },
-        "PATCH" => quote! { ::dioxus::fullstack::patch },
-        "DELETE" => quote! { ::dioxus::fullstack::delete },
-        _ => unreachable!("unsupported method {method}"),
+/// Generate `__<name>_impl` (original) + `<name>` (axum adapter) +
+/// `inventory::submit!` route registration.
+fn expand_axum(method: &str, route: &RouteAttr, func: ItemFn) -> TokenStream2 {
+    let fn_ident = func.sig.ident.clone();
+    let impl_ident = format_ident!("__{}_impl", fn_ident);
+    let vis = func.vis.clone();
+    let attrs = func.attrs.clone();
+    let asyncness = func.sig.asyncness;
+
+    // Renamed original handler — signature/body/attrs preserved, made
+    // module-private (only the adapter calls it).
+    let mut impl_fn = func.clone();
+    impl_fn.sig.ident = impl_ident.clone();
+    impl_fn.vis = syn::Visibility::Inherited;
+
+    // Adapter parameters: clone each typed arg's TYPE, bind to a fresh
+    // `__aN` ident, and forward positionally to `__<name>_impl`. The macro
+    // never interprets the extractor — axum resolves it from the type.
+    let mut fwd_params: Vec<TokenStream2> = Vec::new();
+    let mut fwd_args: Vec<TokenStream2> = Vec::new();
+    for (i, input) in func.sig.inputs.iter().enumerate() {
+        if let FnArg::Typed(pt) = input {
+            let id = format_ident!("__a{}", i);
+            let ty = &pt.ty;
+            fwd_params.push(quote! { #id: #ty });
+            fwd_args.push(quote! { #id });
+        }
+    }
+
+    let call_await = if asyncness.is_some() {
+        quote! { #impl_ident(#(#fwd_args),*).await }
+    } else {
+        quote! { #impl_ident(#(#fwd_args),*) }
+    };
+
+    // Adapter: Result<T, E> → Response. `e.as_status_code()` resolves via the
+    // `AsStatusCode` trait the consumer brings into scope.
+    let adapter = quote! {
+        #(#attrs)*
+        #vis async fn #fn_ident(#(#fwd_params),*) -> ::axum::response::Response {
+            match #call_await {
+                ::core::result::Result::Ok(__v) => ::axum::response::IntoResponse::into_response(
+                    (::axum::http::StatusCode::OK, ::axum::Json(__v))
+                ),
+                ::core::result::Result::Err(__e) => {
+                    let __sc = __e.as_status_code();
+                    ::axum::response::IntoResponse::into_response((__sc, ::axum::Json(__e)))
+                }
+            }
+        }
+    };
+
+    // Route registration via inventory. The register fn is a non-capturing
+    // closure (path is a literal, handler is a fn item) → coerces to a fn
+    // pointer.
+    let axum_path = route::axum_path(&route.path.value());
+    let method_ident = format_ident!("{}", method.to_lowercase());
+    let method_str = method.to_string();
+
+    let registration = quote! {
+        ::inventory::submit! {
+            crate::__ts_api::ApiRoute {
+                method: #method_str,
+                path: #axum_path,
+                register: |__r: ::axum::Router| -> ::axum::Router {
+                    __r.route(#axum_path, ::axum::routing::#method_ident(#fn_ident))
+                },
+            }
+        }
+    };
+
+    quote! {
+        #impl_fn
+        #adapter
+        #registration
     }
 }
 
@@ -117,18 +162,12 @@ pub fn delete(attr: TokenStream, item: TokenStream) -> TokenStream {
 }
 
 // ─── Pure render pipeline (no TokenStream) used by unit tests ─────────
-//
-// proc-macro crates can't host `tests/` integration tests that touch
-// private modules, so the snapshot test lives as a `#[cfg(test)]` unit
-// module here, exercising `classify` + `render` directly off a `syn`-parsed
-// sample handler. This is the same path the macro takes at expansion time.
 #[cfg(test)]
 mod snapshot_tests {
     use crate::route::{classify, RouteAttr};
     use crate::tsgen::render;
     use syn::ItemFn;
 
-    /// Parse `#[<method>(<attr>)] <fn>` pieces and run classify+render.
     fn render_handler(method: &str, attr_src: &str, fn_src: &str) -> String {
         let route: RouteAttr = syn::parse_str(attr_src).expect("parse route attr");
         let func: ItemFn = syn::parse_str(fn_src).expect("parse fn");
@@ -137,56 +176,71 @@ mod snapshot_tests {
     }
 
     #[test]
-    fn spike_path_query_body_extractor_result() {
-        // Exercises: path arg + Option<query> + body + server extractor +
-        // Result<T> return. This is the Phase 1 spike handler.
+    fn post_path_query_body_extractor_result() {
+        // path arg + Query<T> + Json<T> + server extractor (User) + Result<T>.
         let out = render_handler(
             "POST",
-            r#""/api/rooms/{room_id}/comments?after", user: User"#,
+            r#""/api/rooms/{room_id}/comments""#,
             r#"
             pub async fn add_comment(
-                room_id: RoomPartition,
-                after: Option<String>,
                 user: User,
-                req: AddCommentRequest,
+                Path(room_id): Path<String>,
+                Query(q): Query<CommentQuery>,
+                Json(req): Json<AddCommentRequest>,
             ) -> Result<CommentResponse, ApiError> { unreachable!() }
             "#,
         );
-
-        if std::env::var("BLESS").is_ok() {
-            std::fs::write(
-                concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/add_comment.ts"),
-                &out,
-            )
-            .unwrap();
-        }
-        let expected = include_str!("../tests/fixtures/add_comment.ts");
-        assert_eq!(out, expected, "\n--- generated ---\n{out}\n--- expected ---\n{expected}");
+        // path + query + body params; user excluded.
+        assert!(
+            out.contains(
+                "export async function addComment(roomId: string, q: CommentQuery, req: AddCommentRequest): Promise<CommentResponse>"
+            ),
+            "{out}"
+        );
+        // body passed directly (no { req } wrapping).
+        assert!(out.contains("return apiPost<CommentResponse>(__url, req);"), "{out}");
+        // query serialized generically.
+        assert!(out.contains("new URLSearchParams()"), "{out}");
+        assert!(out.contains("Object.entries"), "{out}");
+        // imports
+        assert!(out.contains(r#"import type { AddCommentRequest } from "../types/AddCommentRequest";"#), "{out}");
+        assert!(out.contains(r#"import type { CommentResponse } from "../types/CommentResponse";"#), "{out}");
     }
 
     #[test]
     fn get_path_only_no_body() {
         let out = render_handler(
             "GET",
-            r#""/api/test", user: User"#,
+            r#""/api/test""#,
             r#"pub async fn test_handler(user: User) -> Result<GetMeResponse, ApiError> { unreachable!() }"#,
         );
-        assert!(out.contains("export async function testHandler(): Promise<GetMeResponse>"));
-        assert!(out.contains(r#"return apiGet<GetMeResponse>(__url);"#));
-        assert!(out.contains(r#"import { apiGet } from "../runtime/client";"#));
-        assert!(out.contains(r#"import type { GetMeResponse } from "../types/GetMeResponse";"#));
+        assert!(out.contains("export async function testHandler(): Promise<GetMeResponse>"), "{out}");
+        assert!(out.contains(r#"return apiGet<GetMeResponse>(__url);"#), "{out}");
+        assert!(out.contains(r#"import { apiGet } from "../runtime/client";"#), "{out}");
         // Extractor `user` is stripped — no param.
-        assert!(out.contains("testHandler()"));
+        assert!(out.contains("testHandler()"), "{out}");
     }
 
     #[test]
-    fn vec_and_optional_param_types() {
+    fn multi_path_params() {
+        let out = render_handler(
+            "DELETE",
+            r#""/api/rooms/:room_id/files/:file_id""#,
+            r#"pub async fn del(user: User, Path((room_id, file_id)): Path<(String, String)>) -> Result<(), E> { unreachable!() }"#,
+        );
+        assert!(out.contains("export async function del(roomId: string, fileId: string): Promise<void>"), "{out}");
+        assert!(out.contains("encodeURIComponent(String(roomId))"), "{out}");
+        assert!(out.contains("encodeURIComponent(String(fileId))"), "{out}");
+    }
+
+    #[test]
+    fn vec_return_type() {
         let out = render_handler(
             "POST",
             r#""/api/bulk""#,
-            r#"pub async fn bulk(req: BulkReq) -> Result<Vec<Item>, ApiError> { unreachable!() }"#,
+            r#"pub async fn bulk(Json(req): Json<BulkReq>) -> Result<Vec<Item>, ApiError> { unreachable!() }"#,
         );
-        assert!(out.contains("Promise<Item[]>"), "Vec<Item> → Item[]: {out}");
-        assert!(out.contains(r#"return apiPost<Item[]>(__url, { "req": req });"#), "{out}");
+        assert!(out.contains("Promise<Item[]>"), "{out}");
+        assert!(out.contains("return apiPost<Item[]>(__url, req);"), "{out}");
     }
 }

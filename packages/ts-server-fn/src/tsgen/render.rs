@@ -90,33 +90,25 @@ pub fn render(method: &str, meta: &HandlerMeta) -> RenderedTs {
         }
     }
 
-    // ── Query builder ────────────────────────────────────────────────
-    let query_args: Vec<&crate::route::ClientArg> = meta
-        .client_args
-        .iter()
-        .filter(|a| a.kind == ArgKind::Query)
-        .collect();
+    // ── Query arg (a single `Query<T>` struct, if present) ───────────
+    let query_arg = meta.client_args.iter().find(|a| a.kind == ArgKind::Query);
 
-    // ── Body arg (exactly one, for body-carrying methods) ────────────
+    // ── Body arg (a single `Json<T>` struct, for body-carrying methods)
     let body_arg = meta.client_args.iter().find(|a| a.kind == ArgKind::Body);
 
     // ── Compose function body ────────────────────────────────────────
     let mut body = String::new();
 
-    let has_query = !query_args.is_empty();
-    if has_query {
+    if let Some(q) = query_arg {
+        // Serialize the query struct generically: each own enumerable
+        // property becomes `?k=v`, skipping null/undefined. The macro does
+        // not know the struct's fields, so the object is walked at runtime.
+        let cam = camel(&q.name.to_string());
         body.push_str("  const __q = new URLSearchParams();\n");
-        for a in &query_args {
-            let name = a.name.to_string();
-            let cam = camel(&name);
-            if crate::route::is_option_type(&a.ty) {
-                body.push_str(&format!(
-                    "  if ({cam} !== null && {cam} !== undefined) __q.set(\"{name}\", String({cam}));\n"
-                ));
-            } else {
-                body.push_str(&format!("  __q.set(\"{name}\", String({cam}));\n"));
-            }
-        }
+        body.push_str(&format!(
+            "  for (const [__k, __v] of Object.entries(({cam} ?? {{}}) as Record<string, unknown>)) {{\n"
+        ));
+        body.push_str("    if (__v !== null && __v !== undefined) __q.set(__k, String(__v));\n  }\n");
         body.push_str(&format!(
             "  const __qs = __q.toString();\n  const __url = `{url}` + (__qs ? `?${{__qs}}` : \"\");\n"
         ));
@@ -124,19 +116,16 @@ pub fn render(method: &str, meta: &HandlerMeta) -> RenderedTs {
         body.push_str(&format!("  const __url = `{url}`;\n"));
     }
 
-    // The runtime call. Body-carrying methods pass the wrapped body object
-    // keyed by the original (snake_case) arg name — the dioxus-fullstack
-    // decoder expects `{ "<argName>": <value> }`.
+    // The runtime call. Body-carrying methods pass the request DTO directly
+    // as the JSON body (axum `Json<T>` decodes the body as `T` itself — no
+    // `{ "<argName>": <value> }` wrapping).
     let call = if carries_body {
         match body_arg {
             Some(a) => {
-                let key = a.name.to_string();
-                let cam = camel(&key);
-                format!(
-                    "  return {client_fn}<{ret_ts}>(__url, {{ \"{key}\": {cam} }});\n"
-                )
+                let cam = camel(&a.name.to_string());
+                format!("  return {client_fn}<{ret_ts}>(__url, {cam});\n")
             }
-            None => format!("  return {client_fn}<{ret_ts}>(__url, {{}});\n"),
+            None => format!("  return {client_fn}<{ret_ts}>(__url, undefined);\n"),
         }
     } else {
         format!("  return {client_fn}<{ret_ts}>(__url);\n")
