@@ -46,7 +46,6 @@ fn generate_enum_impl(ident: Ident, ds: &DataEnum) -> proc_macro2::TokenStream {
             );
 
             let struct_def = quote! {
-                #[cfg_attr(feature = "server", derive(rmcp::schemars::JsonSchema))]
                 #[derive(
                     Debug,
                     Clone,
@@ -119,7 +118,6 @@ fn generate_enum_impl(ident: Ident, ds: &DataEnum) -> proc_macro2::TokenStream {
                 );
 
                 let struct_def = quote! {
-                    #[cfg_attr(feature = "server", derive(rmcp::schemars::JsonSchema))]
                     #[derive(
                         Debug,
                         Clone,
