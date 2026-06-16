@@ -28,17 +28,6 @@ jobs:
           components: clippy, rustfmt
           target: wasm32-unknown-unknown
           toolchain: stable
-          # Disable the action's built-in rust-cache so the explicit
-          # Swatinem/rust-cache step below is the single cache owner.
-          cache: false
-
-      # Save/restore the cargo registry + git index, ~/.cargo/bin
-      # (installed CLIs like cargo-release), and the target/ build
-      # artifacts. shared-key lets the build and publish jobs reuse it.
-      - uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: crate-workflow
-          cache-bin: true
 
       - name: Building packages
         env:
@@ -60,16 +49,6 @@ jobs:
           components: clippy, rustfmt
           target: wasm32-unknown-unknown
           toolchain: stable
-          # Disable the action's built-in rust-cache so the explicit
-          # Swatinem/rust-cache step below is the single cache owner.
-          cache: false
-
-      # Same shared-key as the build job → restores its cargo registry,
-      # target/ artifacts, and the cached cargo-release binary.
-      - uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: crate-workflow
-          cache-bin: true
 
       - name: Install release
         run: |
@@ -81,7 +60,7 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
-          cargo release --unpublished --execute
+          cargo release
 
   # docs-build:
   #   runs-on: ubuntu-latest
