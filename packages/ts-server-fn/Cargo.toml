@@ -1,6 +1,6 @@
 [package]
 name = "ts-server-fn"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Turn axum handler attributes into pure axum routes (via inventory) and emit a type-safe TypeScript client at macro-expansion time."
 license = "Apache-2.0"
