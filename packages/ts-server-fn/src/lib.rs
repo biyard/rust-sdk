@@ -70,18 +70,18 @@ fn server_fn_impl(method: &str, attr: TokenStream, item: TokenStream) -> TokenSt
     }
 }
 
-/// Build the impl-rename + axum-wrapper + inventory registration.
+/// Build the axum route-wrapper + inventory registration, keeping the original
+/// handler fn **unchanged** (same name, same `Result` return) so it stays
+/// directly callable (e.g. from unit/integration tests). Only the generated
+/// `__<name>_ts_route` wrapper performs the `Result`→`Json` adaptation and is
+/// what `inventory` registers.
 fn emit_axum(method: &str, route: &RouteAttr, func: ItemFn) -> syn::Result<TokenStream2> {
     let vis = func.vis.clone();
     let name = func.sig.ident.clone();
-    let impl_name = format_ident!("__ts_impl_{}", name);
+    let route_name = format_ident!("__{}_ts_route", name);
 
-    // Rename the original fn → impl (signature + body verbatim).
-    let mut impl_fn = func.clone();
-    impl_fn.sig.ident = impl_name.clone();
-    impl_fn.vis = syn::Visibility::Inherited;
-
-    // Wrapper params: clone each typed arg's TYPE, bind to `__aN`, forward.
+    // Wrapper params: clone each typed arg's TYPE, bind to `__aN`, forward to
+    // the original fn (kept verbatim below).
     let mut wrapper_params: Vec<TokenStream2> = Vec::new();
     let mut forward: Vec<TokenStream2> = Vec::new();
     for (i, input) in func.sig.inputs.iter().enumerate() {
@@ -106,7 +106,7 @@ fn emit_axum(method: &str, route: &RouteAttr, func: ItemFn) -> syn::Result<Token
         ReturnType::Type(_, ty) => is_result_like(ty),
         ReturnType::Default => false,
     };
-    let call = quote! { #impl_name(#(#forward),*).await };
+    let call = quote! { #name(#(#forward),*).await };
     let body = if route.raw {
         quote! { ::axum::response::IntoResponse::into_response(#call) }
     } else if is_result {
@@ -136,9 +136,10 @@ fn emit_axum(method: &str, route: &RouteAttr, func: ItemFn) -> syn::Result<Token
     let method_str = method;
 
     let expanded = quote! {
-        #impl_fn
+        #func
 
-        #vis async fn #name(#(#wrapper_params),*) -> ::axum::response::Response {
+        #[doc(hidden)]
+        #vis async fn #route_name(#(#wrapper_params),*) -> ::axum::response::Response {
             #body
         }
 
@@ -148,7 +149,7 @@ fn emit_axum(method: &str, route: &RouteAttr, func: ItemFn) -> syn::Result<Token
                 path: #axum_path,
                 register: |__r: ::axum::Router| __r.route(
                     #axum_path,
-                    ::axum::routing::#method_router(#name),
+                    ::axum::routing::#method_router(#route_name),
                 ),
             }
         }

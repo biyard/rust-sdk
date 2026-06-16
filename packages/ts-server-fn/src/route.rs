@@ -331,10 +331,12 @@ pub fn classify(
     }
 
     // ── validations (Risk #2: fail loudly, not silently) ──────────────
-    if (method == "GET" || method == "DELETE") && !body_args.is_empty() {
+    // GET must not carry a body. DELETE *may* (uncommon, but axum supports it
+    // and launchpad's device-unregister endpoint relies on it).
+    if method == "GET" && !body_args.is_empty() {
         return Err(syn::Error::new_spanned(
             &route.path,
-            format!("{method} handler cannot take a `Json`/`Form` body"),
+            "GET handler cannot take a `Json`/`Form` body",
         ));
     }
     if body_args.len() > 1 {
