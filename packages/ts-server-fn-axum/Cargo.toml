@@ -1,0 +1,15 @@
+[package]
+name = "ts-server-fn-axum"
+version = "0.1.0"
+edition = "2021"
+description = "Runtime support for ts-server-fn: inventory-collected axum routes + AsStatusCode."
+license = "Apache-2.0"
+repository = "https://github.com/biyard/rust-sdk/tree/main/packages/ts-server-fn-axum"
+
+[dependencies]
+axum = "0.8"
+inventory = "0.3"
+
+[dev-dependencies]
+ts-server-fn = { path = "../ts-server-fn" }
+serde = { version = "1", features = ["derive"] }
