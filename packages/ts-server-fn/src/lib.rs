@@ -50,9 +50,13 @@ fn server_fn_impl(method: &str, attr: TokenStream, item: TokenStream) -> TokenSt
         &func.sig.output,
     ) {
         Ok(meta) => {
-            if let Some(dir) = write_ts::package_dir() {
-                let rendered = tsgen::render(method, &meta);
-                write_ts::write_handler(&dir, "", &rendered.fn_name_camel, &rendered.source);
+            // `raw` handlers return an `axum::Response` (and often take `Bytes`),
+            // so there is no serializable DTO to describe — skip TS generation.
+            if !route.raw {
+                if let Some(dir) = write_ts::package_dir() {
+                    let rendered = tsgen::render(method, &meta);
+                    write_ts::write_handler(&dir, "", &rendered.fn_name_camel, &rendered.source);
+                }
             }
         }
         Err(e) => {
