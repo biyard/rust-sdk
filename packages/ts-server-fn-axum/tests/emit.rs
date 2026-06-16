@@ -85,3 +85,59 @@ fn routes_register_and_router_builds() {
     // The collected router must build without panicking.
     let _router: axum::Router = api_router();
 }
+
+// ── Runtime check: drive real requests through the collected router ──
+async fn send(
+    app: axum::Router,
+    method: &str,
+    uri: &str,
+    body: Option<&str>,
+) -> (axum::http::StatusCode, String) {
+    use tower::ServiceExt;
+    let mut builder = axum::http::Request::builder().method(method).uri(uri);
+    let req = match body {
+        Some(b) => builder
+            .header("content-type", "application/json")
+            .body(axum::body::Body::from(b.to_owned()))
+            .unwrap(),
+        None => {
+            let _ = &mut builder;
+            builder.body(axum::body::Body::empty()).unwrap()
+        }
+    };
+    let res = app.oneshot(req).await.unwrap();
+    let status = res.status();
+    let bytes = axum::body::to_bytes(res.into_body(), usize::MAX).await.unwrap();
+    (status, String::from_utf8(bytes.to_vec()).unwrap())
+}
+
+#[tokio::test]
+async fn handlers_serve_real_requests() {
+    // GET with path param → 200 + JSON body from the Result→Json adapter.
+    let (status, body) = send(api_router(), "GET", "/api/posts/42", None).await;
+    assert_eq!(status, 200, "{body}");
+    let v: serde_json::Value = serde_json::from_str(&body).unwrap();
+    assert_eq!(v["id"], "42");
+    assert_eq!(v["title"], "hi");
+
+    // POST with a DTO body (D2: sent directly, decoded as Json<CreatePost>).
+    let (status, body) = send(
+        api_router(),
+        "POST",
+        "/api/posts",
+        Some(r#"{"title":"hello"}"#),
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    let v: serde_json::Value = serde_json::from_str(&body).unwrap();
+    assert_eq!(v["title"], "hello");
+
+    // DELETE returning Result<(), _> → 200 with empty/`null` JSON body.
+    let (status, _body) = send(api_router(), "DELETE", "/api/posts/7", None).await;
+    assert_eq!(status, 200);
+
+    // GET with query string → decodes Query<ListQuery>, returns the list.
+    let (status, body) = send(api_router(), "GET", "/api/posts?limit=5", None).await;
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(body, "[]");
+}

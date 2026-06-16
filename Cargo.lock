@@ -4343,6 +4343,9 @@ dependencies = [
  "axum",
  "inventory",
  "serde",
+ "serde_json",
+ "tokio",
+ "tower",
  "ts-server-fn",
 ]
 
