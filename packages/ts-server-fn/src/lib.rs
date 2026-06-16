@@ -1,39 +1,28 @@
-//! `ts-server-fn` — wrap dioxus-fullstack server functions and emit a
-//! type-safe TypeScript client at macro-expansion time.
+//! `ts-server-fn` — turn `#[get]/#[post]/#[put]/#[patch]/#[delete]` handlers
+//! into **pure axum routes** and emit a type-safe TypeScript client.
 //!
-//! Each `#[get]/#[post]/#[put]/#[patch]/#[delete]` attribute:
+//! This is the post-Dioxus design. Each attribute:
 //!
-//! 1. **Re-emits the original dioxus-fullstack server fn unchanged.** The
-//!    macro re-attaches `#[::dioxus::fullstack::<method>(<original attr>)]`
-//!    to the function so dioxus generates the server handler + browser RPC
-//!    stub exactly as before. The server keeps working 100% — this crate is
-//!    a transparent wrapper.
+//! 1. **Renames the original fn to `__ts_impl_<name>`** (signature + body
+//!    unchanged) and emits a public `<name>` axum handler that takes the same
+//!    extractors, forwards to the impl, and adapts the return:
+//!    - `Result<T, E>` → `Ok` ⇒ `(200, Json(T))`, `Err` ⇒
+//!      `(E.as_status_code(), Json(E))` (via the `AsStatusCode` trait from
+//!      `ts-server-fn-axum`).
+//!    - plain `T` ⇒ `(200, Json(T))`.
+//!    - `#[get("…", raw)]` ⇒ the impl's own `IntoResponse` verbatim
+//!      (downloads / redirects).
+//!    The route is registered through `inventory` so `api_router()` collects
+//!    every handler with no hand-written route table.
 //!
-//! 2. **When `TS_SERVER_FN_PACKAGE_DIR` is set at the consumer's build
-//!    time**, renders a TypeScript client function for the handler and
-//!    writes it under that dir (one file per handler). The generated fn is
-//!    a thin typed wrapper over a hand-written `runtime/client.ts` that owns
-//!    transport, cookies, body-wrapping, and status→throw.
+//! 2. **When `TS_SERVER_FN_PACKAGE_DIR` is set**, classifies the signature by
+//!    extractor *type* (`Path`/`Query`/`Json`) and writes one `.ts` client fn
+//!    per handler. Request body is the DTO directly (no `{ "arg": value }`
+//!    wrapping); query is the `Query<T>` struct.
 //!
-//! Attribute syntax matches dioxus's / by-macros' (see `route.rs`):
-//!
-//! ```ignore
-//!     #[post("/api/posts/{post_id}/comments?after", user: User)]
-//!     pub async fn add_comment(
-//!         post_id: FeedPartition,      // path
-//!         after: Option<String>,       // query (skipped when None)
-//!         req: AddCommentRequest,      // body → { "req": <value> }
-//!     ) -> Result<Comment> { ... }     // → Promise<Comment>
-//! ```
-//!
-//! Wire contract matched by the generated TS (see asset
-//! `common/fullstack/server_fn.rs`):
-//!   - URL = path template with `{}` substituted (each path arg
-//!     `encodeURIComponent`'d) + `?k=v` query (None skipped)
-//!   - POST/PUT/PATCH body = JSON object keyed by the body arg name:
-//!     `{ "<argName>": <value> }`
-//!   - 2xx = plain JSON of the return value; non-2xx = throw
-//!   - cookies via `credentials: 'include'`
+//! Classification is signature-type-based and validated: a `Json` body on
+//! GET/DELETE, two bodies, or a path-placeholder/arg-count mismatch is a hard
+//! compile error.
 
 mod route;
 mod tsgen;
@@ -41,152 +30,264 @@ mod write_ts;
 
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
-use quote::quote;
-use syn::{parse_macro_input, ItemFn};
+use quote::{format_ident, quote};
+use syn::{parse_macro_input, FnArg, ItemFn, ReturnType};
 
-use route::RouteAttr;
+use route::{is_result_like, RouteAttr};
 
 /// Shared expansion for every HTTP-method attribute.
 fn server_fn_impl(method: &str, attr: TokenStream, item: TokenStream) -> TokenStream {
-    // Keep the original attribute token stream verbatim so we can re-attach
-    // the dioxus-fullstack macro byte-for-byte.
-    let attr2: TokenStream2 = attr.clone().into();
     let route = parse_macro_input!(attr as RouteAttr);
     let func = parse_macro_input!(item as ItemFn);
 
-    // ── 1. Side effect: emit TS when generation is enabled ───────────
-    if let Some(dir) = write_ts::package_dir() {
-        let meta = route::classify(
-            &route,
-            &func.sig.ident,
-            &func.sig.inputs,
-            &func.sig.output,
-        );
-        let rendered = tsgen::render(method, &meta);
-        // Flat layout by default ("" feature segment). Phase 2's `make
-        // gen-ts` can group by module by passing a feature via a future
-        // attribute key; for the spike we write directly under handlers/.
-        write_ts::write_handler(&dir, "", &rendered.fn_name_camel, &rendered.source);
+    // ── 1. Classify + (optionally) emit TS. Validation errors surface as
+    //    compile errors regardless of whether generation is enabled. ───
+    match route::classify(
+        method,
+        &route,
+        &func.sig.ident,
+        &func.sig.inputs,
+        &func.sig.output,
+    ) {
+        Ok(meta) => {
+            if let Some(dir) = write_ts::package_dir() {
+                let rendered = tsgen::render(method, &meta);
+                write_ts::write_handler(&dir, "", &rendered.fn_name_camel, &rendered.source);
+            }
+        }
+        Err(e) => {
+            // Keep the original fn in the output so downstream sees the symbol,
+            // but attach the diagnostic.
+            let err = e.to_compile_error();
+            return quote! { #err #func }.into();
+        }
     }
 
-    // ── 2. Re-emit the original server fn with the dioxus attribute ──
-    let dioxus_attr = method_path(method);
-    let expanded = quote! {
-        #[#dioxus_attr(#attr2)]
-        #func
-    };
-    expanded.into()
+    // ── 2. Emit the pure-axum route + impl. ──────────────────────────
+    match emit_axum(method, &route, func) {
+        Ok(ts) => ts.into(),
+        Err(e) => e.to_compile_error().into(),
+    }
 }
 
-/// The dioxus-fullstack attribute path for a method, as a token stream
-/// suitable for splicing into `#[ ... ]`.
-fn method_path(method: &str) -> TokenStream2 {
-    match method {
-        "GET" => quote! { ::dioxus::fullstack::get },
-        "POST" => quote! { ::dioxus::fullstack::post },
-        "PUT" => quote! { ::dioxus::fullstack::put },
-        "PATCH" => quote! { ::dioxus::fullstack::patch },
-        "DELETE" => quote! { ::dioxus::fullstack::delete },
-        _ => unreachable!("unsupported method {method}"),
+/// Build the axum route-wrapper + inventory registration, keeping the original
+/// handler fn **unchanged** (same name, same `Result` return) so it stays
+/// directly callable (e.g. from unit/integration tests). Only the generated
+/// `__<name>_ts_route` wrapper performs the `Result`→`Json` adaptation and is
+/// what `inventory` registers.
+fn emit_axum(method: &str, route: &RouteAttr, func: ItemFn) -> syn::Result<TokenStream2> {
+    let vis = func.vis.clone();
+    let name = func.sig.ident.clone();
+    let route_name = format_ident!("__{}_ts_route", name);
+
+    // Wrapper params: clone each typed arg's TYPE, bind to `__aN`, forward to
+    // the original fn (kept verbatim below).
+    let mut wrapper_params: Vec<TokenStream2> = Vec::new();
+    let mut forward: Vec<TokenStream2> = Vec::new();
+    for (i, input) in func.sig.inputs.iter().enumerate() {
+        match input {
+            FnArg::Typed(pt) => {
+                let id = format_ident!("__a{}", i);
+                let ty = &pt.ty;
+                wrapper_params.push(quote! { #id: #ty });
+                forward.push(quote! { #id });
+            }
+            FnArg::Receiver(r) => {
+                return Err(syn::Error::new_spanned(
+                    r,
+                    "ts-server-fn handlers must be free functions (no `self`)",
+                ));
+            }
+        }
     }
+
+    // Response adapter.
+    let is_result = match &func.sig.output {
+        ReturnType::Type(_, ty) => is_result_like(ty),
+        ReturnType::Default => false,
+    };
+    let call = quote! { #name(#(#forward),*).await };
+    let body = if route.raw {
+        quote! { ::axum::response::IntoResponse::into_response(#call) }
+    } else if is_result {
+        quote! {
+            match #call {
+                ::core::result::Result::Ok(__v) => ::axum::response::IntoResponse::into_response(
+                    (::axum::http::StatusCode::OK, ::axum::Json(__v))
+                ),
+                ::core::result::Result::Err(__e) => {
+                    let __code = ::ts_server_fn_axum::AsStatusCode::as_status_code(&__e);
+                    ::axum::response::IntoResponse::into_response((__code, ::axum::Json(__e)))
+                }
+            }
+        }
+    } else {
+        quote! {
+            ::axum::response::IntoResponse::into_response(
+                (::axum::http::StatusCode::OK, ::axum::Json(#call))
+            )
+        }
+    };
+
+    // inventory registration. axum route path is the path part (strip query).
+    let axum_path = route.path.value();
+    let axum_path = axum_path.split('?').next().unwrap_or("").to_string();
+    let method_router = format_ident!("{}", method.to_lowercase());
+    let method_str = method;
+
+    let expanded = quote! {
+        #func
+
+        #[doc(hidden)]
+        #vis async fn #route_name(#(#wrapper_params),*) -> ::axum::response::Response {
+            #body
+        }
+
+        ::ts_server_fn_axum::inventory::submit! {
+            ::ts_server_fn_axum::ApiRoute {
+                method: #method_str,
+                path: #axum_path,
+                register: |__r: ::axum::Router| __r.route(
+                    #axum_path,
+                    ::axum::routing::#method_router(#route_name),
+                ),
+            }
+        }
+    };
+    Ok(expanded)
 }
 
 #[proc_macro_attribute]
 pub fn get(attr: TokenStream, item: TokenStream) -> TokenStream {
     server_fn_impl("GET", attr, item)
 }
-
 #[proc_macro_attribute]
 pub fn post(attr: TokenStream, item: TokenStream) -> TokenStream {
     server_fn_impl("POST", attr, item)
 }
-
 #[proc_macro_attribute]
 pub fn put(attr: TokenStream, item: TokenStream) -> TokenStream {
     server_fn_impl("PUT", attr, item)
 }
-
 #[proc_macro_attribute]
 pub fn patch(attr: TokenStream, item: TokenStream) -> TokenStream {
     server_fn_impl("PATCH", attr, item)
 }
-
 #[proc_macro_attribute]
 pub fn delete(attr: TokenStream, item: TokenStream) -> TokenStream {
     server_fn_impl("DELETE", attr, item)
 }
 
-// ─── Pure render pipeline (no TokenStream) used by unit tests ─────────
-//
-// proc-macro crates can't host `tests/` integration tests that touch
-// private modules, so the snapshot test lives as a `#[cfg(test)]` unit
-// module here, exercising `classify` + `render` directly off a `syn`-parsed
-// sample handler. This is the same path the macro takes at expansion time.
+// ─── Unit tests: classify + render pipeline (no axum needed) ─────────
 #[cfg(test)]
 mod snapshot_tests {
     use crate::route::{classify, RouteAttr};
     use crate::tsgen::render;
     use syn::ItemFn;
 
-    /// Parse `#[<method>(<attr>)] <fn>` pieces and run classify+render.
     fn render_handler(method: &str, attr_src: &str, fn_src: &str) -> String {
         let route: RouteAttr = syn::parse_str(attr_src).expect("parse route attr");
         let func: ItemFn = syn::parse_str(fn_src).expect("parse fn");
-        let meta = classify(&route, &func.sig.ident, &func.sig.inputs, &func.sig.output);
+        let meta = classify(method, &route, &func.sig.ident, &func.sig.inputs, &func.sig.output)
+            .expect("classify ok");
         render(method, &meta).source
     }
 
     #[test]
-    fn spike_path_query_body_extractor_result() {
-        // Exercises: path arg + Option<query> + body + server extractor +
-        // Result<T> return. This is the Phase 1 spike handler.
-        let out = render_handler(
-            "POST",
-            r#""/api/rooms/{room_id}/comments?after", user: User"#,
-            r#"
-            pub async fn add_comment(
-                room_id: RoomPartition,
-                after: Option<String>,
-                user: User,
-                req: AddCommentRequest,
-            ) -> Result<CommentResponse, ApiError> { unreachable!() }
-            "#,
-        );
-
-        if std::env::var("BLESS").is_ok() {
-            std::fs::write(
-                concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/add_comment.ts"),
-                &out,
-            )
-            .unwrap();
-        }
-        let expected = include_str!("../tests/fixtures/add_comment.ts");
-        assert_eq!(out, expected, "\n--- generated ---\n{out}\n--- expected ---\n{expected}");
-    }
-
-    #[test]
-    fn get_path_only_no_body() {
+    fn get_path_only() {
         let out = render_handler(
             "GET",
-            r#""/api/test", user: User"#,
-            r#"pub async fn test_handler(user: User) -> Result<GetMeResponse, ApiError> { unreachable!() }"#,
+            r#""/api/data-room/{room_id}""#,
+            r#"pub async fn get_data_room(Path(room_id): Path<String>, user: User)
+                 -> CollabResult<DataRoomResponse> { unreachable!() }"#,
         );
-        assert!(out.contains("export async function testHandler(): Promise<GetMeResponse>"));
-        assert!(out.contains(r#"return apiGet<GetMeResponse>(__url);"#));
-        assert!(out.contains(r#"import { apiGet } from "../runtime/client";"#));
-        assert!(out.contains(r#"import type { GetMeResponse } from "../types/GetMeResponse";"#));
-        // Extractor `user` is stripped — no param.
-        assert!(out.contains("testHandler()"));
+        // alias `CollabResult<T>` unwraps to T (the old code rendered the alias!)
+        assert!(out.contains("export async function getDataRoom(roomId: string): Promise<DataRoomResponse>"), "{out}");
+        assert!(out.contains("`/api/data-room/${encodeURIComponent(String(roomId))}`"), "{out}");
+        assert!(out.contains(r#"import type { DataRoomResponse } from "../types/DataRoomResponse";"#), "{out}");
+        // server extractor `user: User` stripped
+        assert!(!out.contains("user"), "{out}");
+        assert!(!out.contains("CollabResult"), "alias must not leak into TS: {out}");
     }
 
     #[test]
-    fn vec_and_optional_param_types() {
+    fn post_body_direct_no_wrapping() {
         let out = render_handler(
             "POST",
-            r#""/api/bulk""#,
-            r#"pub async fn bulk(req: BulkReq) -> Result<Vec<Item>, ApiError> { unreachable!() }"#,
+            r#""/api/posts""#,
+            r#"pub async fn create_post(Json(req): Json<CreatePostRequest>)
+                 -> Result<PostResponse, ApiError> { unreachable!() }"#,
         );
-        assert!(out.contains("Promise<Item[]>"), "Vec<Item> → Item[]: {out}");
-        assert!(out.contains(r#"return apiPost<Item[]>(__url, { "req": req });"#), "{out}");
+        // D2: body passed directly, not `{ "req": req }`
+        assert!(out.contains("export async function createPost(req: CreatePostRequest): Promise<PostResponse>"), "{out}");
+        assert!(out.contains("return apiPost<PostResponse>(`/api/posts`, req);"), "{out}");
+        assert!(!out.contains(r#"{ "req""#), "must not wrap body: {out}");
+        // explicit Result<T,E> → error doc
+        assert!(out.contains("@throws ApiError"), "{out}");
+    }
+
+    #[test]
+    fn path_tuple_and_query_struct() {
+        let out = render_handler(
+            "GET",
+            r#""/api/rooms/{room_id}/files""#,
+            r#"pub async fn list_files(Path(room_id): Path<String>, Query(q): Query<ListFilesQuery>)
+                 -> Result<ListResponseFile, ApiError> { unreachable!() }"#,
+        );
+        assert!(out.contains("listFiles(roomId: string, q: ListFilesQuery)"), "{out}");
+        // query struct forwarded as object to the runtime
+        assert!(out.contains("return apiGet<ListResponseFile>(`/api/rooms/${encodeURIComponent(String(roomId))}/files`, q);"), "{out}");
+    }
+
+    #[test]
+    fn delete_unit_return_is_void() {
+        let out = render_handler(
+            "DELETE",
+            r#""/api/posts/{id}""#,
+            r#"pub async fn delete_post(Path(id): Path<String>) -> Result<(), ApiError> { unreachable!() }"#,
+        );
+        assert!(out.contains("deletePost(id: string): Promise<void>"), "{out}");
+        assert!(out.contains("return apiDelete<void>(`/api/posts/${encodeURIComponent(String(id))}`);"), "{out}");
+    }
+
+    #[test]
+    fn multi_path_tuple() {
+        let out = render_handler(
+            "GET",
+            r#""/api/rooms/{room_id}/files/{file_id}""#,
+            r#"pub async fn get_file(Path((room_id, file_id)): Path<(String, String)>)
+                 -> Result<FileResponse, ApiError> { unreachable!() }"#,
+        );
+        assert!(out.contains("getFile(roomId: string, fileId: string)"), "{out}");
+        assert!(out.contains("/api/rooms/${encodeURIComponent(String(roomId))}/files/${encodeURIComponent(String(fileId))}`"), "{out}");
+    }
+
+    // ── validation errors (Risk #2) ──────────────────────────────────
+    fn classify_err(method: &str, attr_src: &str, fn_src: &str) -> String {
+        let route: RouteAttr = syn::parse_str(attr_src).unwrap();
+        let func: ItemFn = syn::parse_str(fn_src).unwrap();
+        classify(method, &route, &func.sig.ident, &func.sig.inputs, &func.sig.output)
+            .unwrap_err()
+            .to_string()
+    }
+
+    #[test]
+    fn err_body_on_get() {
+        let e = classify_err(
+            "GET",
+            r#""/api/x""#,
+            r#"pub async fn x(Json(req): Json<Req>) -> Result<R, E> { unreachable!() }"#,
+        );
+        assert!(e.contains("cannot take a `Json`"), "{e}");
+    }
+
+    #[test]
+    fn err_path_count_mismatch() {
+        let e = classify_err(
+            "GET",
+            r#""/api/x/{a}/{b}""#,
+            r#"pub async fn x(Path(a): Path<String>) -> Result<R, E> { unreachable!() }"#,
+        );
+        assert!(e.contains("path placeholder"), "{e}");
     }
 }
