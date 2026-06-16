@@ -1,4 +1,4 @@
-PACKAGES=by-macros dioxus-gtag-macro dioxus-gtag ts-server-fn
+PACKAGES=by-macros dioxus-gtag-macro dioxus-gtag ts-server-fn ts-server-fn-axum
 
 setup:
 	cargo install mdbook
