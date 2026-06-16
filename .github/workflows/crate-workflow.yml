@@ -81,7 +81,7 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
-          cargo release --unpublished
+          cargo release --unpublished --execute
 
   # docs-build:
   #   runs-on: ubuntu-latest
