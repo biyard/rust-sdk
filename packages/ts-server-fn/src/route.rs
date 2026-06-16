@@ -93,11 +93,13 @@ fn binding_name(pat: &syn::Pat, fallback: &str) -> Ident {
     }
 }
 
-/// Inner `T` of a `Result<T, _>`, if `ty` is one.
+/// Inner `T` of a `Result<T, _>` (or any alias whose name ends in
+/// `Result`, e.g. `CollabResult<T>` / `RaResult<T>` / `Result<T>`), if
+/// `ty` is one. The first generic argument is the success type.
 pub fn result_inner(ty: &Type) -> Option<&Type> {
     if let Type::Path(tp) = ty {
         if let Some(seg) = tp.path.segments.last() {
-            if seg.ident == "Result" {
+            if seg.ident == "Result" || seg.ident.to_string().ends_with("Result") {
                 if let syn::PathArguments::AngleBracketed(args) = &seg.arguments {
                     if let Some(syn::GenericArgument::Type(inner)) = args.args.first() {
                         return Some(inner);
