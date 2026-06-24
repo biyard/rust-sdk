@@ -2308,7 +2308,6 @@ dependencies = [
  "serde_json",
  "tokio",
  "tower",
- "tower-service",
  "tracing",
 ]
 
