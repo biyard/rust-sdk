@@ -1,0 +1,24 @@
+[package]
+name = "mcp-tool"
+version = "0.1.0"
+edition = "2024"
+description = "Domain-agnostic MCP-over-axum runtime: inventory tool registry, /mcp/{secret} streamable-HTTP router, in-process oneshot dispatch."
+license = "Apache-2.0"
+repository = "https://github.com/biyard/rust-sdk/tree/main/packages/mcp-tool"
+
+[dependencies]
+axum = { version = "0.8", features = ["http1", "tokio"] }
+tower = { version = "0.5", features = ["util"] }
+tower-service = "0.3"
+inventory = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+tokio = { version = "1", features = ["sync"] }
+rmcp = { version = "1.7", features = [
+  "server",
+  "macros",
+  "schemars",
+  "transport-streamable-http-server",
+] }
