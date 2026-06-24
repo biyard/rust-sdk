@@ -15,7 +15,7 @@ serde_json = "1"
 tracing = "0.1"
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 tokio = { version = "1", features = ["sync"] }
-rmcp = { version = "1.7", features = [
+rmcp = { version = "1.8", features = [
   "server",
   "macros",
   "schemars",
@@ -28,7 +28,7 @@ axum = { version = "0.8", features = ["http1", "tokio"] }
 tower = { version = "0.5", features = ["util"] }
 inventory = "0.3"
 serde_json = "1"
-rmcp = { version = "1.7", features = [
+rmcp = { version = "1.8", features = [
   "server",
   "macros",
   "schemars",

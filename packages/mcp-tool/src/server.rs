@@ -7,7 +7,7 @@
 //! secret and cached with a TTL + size bound.
 
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use axum::Router;
 use rmcp::model::{
@@ -23,6 +23,14 @@ use tokio::sync::RwLock;
 
 use crate::registry::all_tools;
 
+static SERVER_INFO: OnceLock<(String, String)> = OnceLock::new();
+
+/// Set the MCP server's advertised name + instructions. Call once at startup
+/// (alongside `set_app_router`). Defaults to a generic name if unset.
+pub fn set_server_info(name: impl Into<String>, instructions: impl Into<String>) {
+    let _ = SERVER_INFO.set((name.into(), instructions.into()));
+}
+
 /// A generic MCP server bound to one request's `mcp_secret`. Every tool it
 /// exposes re-dispatches into the app router carrying that secret.
 #[derive(Clone)]
@@ -32,15 +40,14 @@ struct GenericMcpServer {
 
 impl ServerHandler for GenericMcpServer {
     fn get_info(&self) -> ServerInfo {
+        let (name, instructions) = SERVER_INFO
+            .get()
+            .map(|(n, i)| (n.as_str(), i.as_str()))
+            .unwrap_or(("mcp", "MCP server."));
         ServerInfo::new(ServerCapabilities::builder().enable_tools().build())
             .with_protocol_version(ProtocolVersion::V_2025_03_26)
-            .with_server_info(Implementation::new(
-                "essence-mcp",
-                env!("CARGO_PKG_VERSION"),
-            ))
-            .with_instructions(
-                "Essence MCP. Semantically search a connected Essence House's knowledge.",
-            )
+            .with_server_info(Implementation::new(name, env!("CARGO_PKG_VERSION")))
+            .with_instructions(instructions)
     }
 
     async fn list_tools(

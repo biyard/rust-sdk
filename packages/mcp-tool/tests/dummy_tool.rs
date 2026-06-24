@@ -97,7 +97,7 @@ async fn list_and_call_dummy_tool() {
     });
     let (status, body) = post_rpc(&app, secret, init).await;
     assert!(status.is_success(), "initialize status: {status}");
-    assert_eq!(body["result"]["serverInfo"]["name"], "essence-mcp");
+    assert_eq!(body["result"]["serverInfo"]["name"], "mcp");
     assert_eq!(body["result"]["protocolVersion"], "2025-03-26");
 
     // 2) tools/list — the inventory-registered dummy tool shows up.
