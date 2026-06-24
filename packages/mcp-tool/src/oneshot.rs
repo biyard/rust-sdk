@@ -54,7 +54,10 @@ pub async fn mcp_oneshot<T: serde::de::DeserializeOwned>(
         builder = builder.header("content-type", "application/json");
     }
     let req = builder
-        .body(body.map(axum::body::Body::from).unwrap_or_else(axum::body::Body::empty))
+        .body(
+            body.map(axum::body::Body::from)
+                .unwrap_or_else(axum::body::Body::empty),
+        )
         .map_err(|e| {
             tracing::error!("mcp oneshot: build request failed: {e}");
             McpOneshotError::RoutingFailed
@@ -86,7 +89,7 @@ pub async fn mcp_oneshot<T: serde::de::DeserializeOwned>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axum::{routing::get, Json, Router};
+    use axum::{Json, Router, routing::get};
 
     #[tokio::test]
     async fn oneshot_routes_through_app_router_and_forwards_secret() {

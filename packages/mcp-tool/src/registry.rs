@@ -1,7 +1,6 @@
 use crate::result::McpResult;
 
-pub type DispatchFuture =
-    std::pin::Pin<Box<dyn std::future::Future<Output = McpResult> + Send>>;
+pub type DispatchFuture = std::pin::Pin<Box<dyn std::future::Future<Output = McpResult> + Send>>;
 
 /// A tool's dispatch entry point: given the request's MCP secret and the raw
 /// JSON arguments, run the tool. Implemented by `#[mcp_tool]`-generated code.
