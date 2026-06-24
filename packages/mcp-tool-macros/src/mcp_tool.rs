@@ -511,4 +511,27 @@ mod expand_tests {
         let out = expand(attr, item).to_string();
         assert!(out.contains("compile_error"));
     }
+
+    #[test]
+    fn expand_preserves_route_attr_and_excludes_extractors() {
+        let attr = quote! { name = "search_essence", description = "search" };
+        let item = quote! {
+            #[get("/api/mcp/search")]
+            pub async fn search_essence_handler(
+                house: McpHouse,
+                Query(q): Query<SearchQuery>,
+            ) -> Result<SearchEssenceResponse, EssenceError> { unreachable!() }
+        };
+        let out = expand(attr, item).to_string();
+        // The stacked route attribute is re-emitted intact so the sibling
+        // route macro still expands the handler into the real REST route.
+        assert!(out.contains("# [get") || out.contains("#[get"));
+        // The extractor's type (McpHouse) is NOT pulled into the schema; only
+        // the Query data type is reflected.
+        assert!(out.contains("schema_for ! (SearchQuery)"));
+        assert!(!out.contains("schema_for ! (McpHouse)"));
+        // Generated code targets only the mcp_tool runtime API.
+        assert!(out.contains("mcp_tool :: McpTool"));
+        assert!(out.contains("mcp_tool :: DispatchFuture"));
+    }
 }
