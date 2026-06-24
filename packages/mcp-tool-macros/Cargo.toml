@@ -9,6 +9,13 @@ repository = "https://github.com/biyard/rust-sdk/tree/main/packages/mcp-tool-mac
 [lib]
 proc-macro = true
 
+[features]
+# Marker feature consumed by the *generated* code's `#[cfg(feature = "server")]`
+# gate (the consumer — e.g. essence — builds with this on). The macro crate
+# itself has no runtime, so the feature is empty here; the end-to-end test
+# enables it so the generated items compile in this crate's test target.
+server = []
+
 [dependencies]
 proc-macro2 = "1"
 quote = "1"
