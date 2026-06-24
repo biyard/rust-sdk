@@ -52,6 +52,15 @@ async fn search_essence_handler(Query(q): Query<SearchQuery>) -> Result<serde_js
     Ok(serde_json::json!({ "echoed": q.query, "limit": q.limit }))
 }
 
+// ── a tool whose route is intentionally absent: the oneshot gets a 404 ──
+// Used to verify that the dispatch error is stringified only once (Fix 1).
+#[allow(dead_code)]
+#[mcp_tool_macros::mcp_tool(name = "missing_route_tool", description = "always 404")]
+#[get("/api/mcp/no-such-route")]
+async fn missing_route_handler(Query(q): Query<SearchQuery>) -> Result<serde_json::Value, String> {
+    Ok(serde_json::json!({ "echoed": q.query }))
+}
+
 #[tokio::test]
 async fn generated_dispatch_oneshots_into_router() {
     // Register the matching REST route by hand (stands in for the real #[get]).
@@ -102,4 +111,37 @@ async fn dispatch_omits_absent_optional_query_field() {
         .expect("dispatch ok without optional field");
     let text = format!("{result:?}");
     assert!(text.contains("solo"), "echoed query: {text}");
+}
+
+#[tokio::test]
+async fn dispatch_error_is_not_double_stringified() {
+    // Idempotent: the router was already set by a prior test; that's fine.
+    mcp_tool::set_app_router(
+        axum::Router::new().route("/api/mcp/search", axum::routing::get(search_route)),
+    );
+
+    let tool = mcp_tool::all_tools()
+        .find(|t| t.name == "missing_route_tool")
+        .expect("tool registered");
+
+    // The route `/api/mcp/no-such-route` is not registered → axum returns 404.
+    // Before Fix 1, the error message inside ErrorData was:
+    //   "-32603: mcp oneshot status 404: …"
+    // (because the McpOneshotError was first wrapped into ErrorData, then
+    //  IntoMcpResult called `.to_string()` on that ErrorData and wrapped it again).
+    // After Fix 1, the error carries the raw McpOneshotError string:
+    //   "mcp oneshot status 404: …"
+    let err = (tool.dispatch)("hsec_test".into(), serde_json::json!({ "query": "x" }))
+        .await
+        .expect_err("dispatch should return Err for a 404 route");
+
+    let msg: &str = &err.message;
+    assert!(
+        msg.contains("mcp oneshot status 404"),
+        "error message should contain the raw oneshot error: {msg}"
+    );
+    assert!(
+        !msg.contains("-32603"),
+        "error message must NOT embed the JSON-RPC error code (double-stringify): {msg}"
+    );
 }

@@ -276,9 +276,7 @@ pub(crate) fn expand(attr: TokenStream, item: TokenStream) -> TokenStream {
                 #rebuild
                 let __res: ::std::result::Result<serde_json::Value, mcp_tool::McpOneshotError> =
                     mcp_tool::mcp_oneshot(#method, &__path, &mcp_secret, __body).await;
-                __res
-                    .map_err(|e| rmcp::ErrorData::internal_error(e.to_string(), None))
-                    .into_mcp()
+                __res.into_mcp()
             })
         }
 
