@@ -7,6 +7,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  CARGO_NET_GIT_FETCH_WITH_CLI: "true"
 
 permissions:
   contents: read
@@ -22,6 +23,10 @@ jobs:
         with:
           submodules: recursive
           ssh-key: ${{ secrets.PULL_KEY_REPO }}
+
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.RBDK_DEPLOY_KEY }}
 
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
@@ -43,6 +48,10 @@ jobs:
         with:
           submodules: recursive
           ssh-key: ${{ secrets.PULL_KEY_REPO }}
+
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.RBDK_DEPLOY_KEY }}
 
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
