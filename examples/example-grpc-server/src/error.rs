@@ -3,13 +3,17 @@
 pub enum Error {
     Unauthenticated,
     NameRequired,
+    CountdownTooLong { max: u32 },
 }
 
-impl From<Error> for tonic::Status {
+impl From<Error> for by_grpc::Status {
     fn from(error: Error) -> Self {
         match error {
-            Error::Unauthenticated => tonic::Status::unauthenticated("sign in required"),
-            Error::NameRequired => tonic::Status::invalid_argument("name is required"),
+            Error::Unauthenticated => Self::unauthenticated("sign in required"),
+            Error::NameRequired => Self::invalid_argument("name is required"),
+            Error::CountdownTooLong { max } => {
+                Self::invalid_argument(format!("countdown starts at most from {max}"))
+            }
         }
     }
 }

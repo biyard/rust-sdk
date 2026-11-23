@@ -3,8 +3,20 @@ syntax = "proto3";
 package biyard.greeter.v1;
 
 service Greeter {
+  // Unary.
   rpc SayHello(HelloRequest) returns (HelloReply);
+  // Unary; reads the call context through extractors.
   rpc WhoAmI(WhoAmIRequest) returns (WhoAmIReply);
+  // Unary; answers with a cookie directive that sets the session cookie.
+  rpc SignIn(SignInRequest) returns (SignInReply);
+  // Unary; reads the forwarded session cookie and clears it.
+  rpc SignOut(SignOutRequest) returns (SignOutReply);
+  // Server streaming.
+  rpc Countdown(CountdownRequest) returns (stream Tick);
+  // Client streaming.
+  rpc Sum(stream Number) returns (SumReply);
+  // Bidirectional streaming.
+  rpc Chat(stream ChatMessage) returns (stream ChatMessage);
 }
 
 message HelloRequest {
@@ -20,4 +32,41 @@ message WhoAmIRequest {}
 message WhoAmIReply {
   string user_id = 1;
   optional string workspace_id = 2;
+}
+
+message SignInRequest {
+  string user_id = 1;
+}
+
+message SignInReply {
+  string user_id = 1;
+}
+
+message SignOutRequest {}
+
+message SignOutReply {
+  bool had_session = 1;
+}
+
+message CountdownRequest {
+  uint32 from = 1;
+}
+
+message Tick {
+  uint32 remaining = 1;
+}
+
+message Number {
+  int64 value = 1;
+}
+
+message SumReply {
+  int64 total = 1;
+  uint32 count = 2;
+  string summed_for = 3;
+}
+
+message ChatMessage {
+  string from = 1;
+  string text = 2;
 }

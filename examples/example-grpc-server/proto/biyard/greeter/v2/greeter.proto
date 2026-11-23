@@ -3,6 +3,7 @@ syntax = "proto3";
 package biyard.greeter.v2;
 
 service Greeter {
+  // Breaking change of v1 SayHello: adds a locale and reports who was greeted.
   rpc SayHello(HelloRequest) returns (HelloReply);
 }
 

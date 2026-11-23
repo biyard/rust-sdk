@@ -1,5 +1,4 @@
-use by_grpc::{CallParts, FromCall};
-use tonic::Status;
+use by_grpc::{CallParts, FromCall, Status};
 
 use crate::Error;
 
@@ -12,7 +11,7 @@ pub struct Authenticated {
 impl FromCall for Authenticated {
     async fn from_call(parts: &CallParts) -> Result<Self, Status> {
         let user_id = parts
-            .context
+            .context()
             .caller
             .as_ref()
             .map(|caller| caller.user_id.trim())
@@ -35,7 +34,7 @@ pub struct VisitedWorkspace {
 impl FromCall for VisitedWorkspace {
     async fn from_call(parts: &CallParts) -> Result<Self, Status> {
         parts
-            .context
+            .context()
             .workspace
             .as_ref()
             .map(|workspace| workspace.id.trim())
@@ -44,5 +43,18 @@ impl FromCall for VisitedWorkspace {
                 workspace_id: id.to_string(),
             })
             .ok_or_else(|| Status::invalid_argument("this method requires a workspace scope"))
+    }
+}
+
+/// Session cookie the BFF forwarded from the browser, if any.
+#[derive(Debug, Clone)]
+pub struct SessionCookie(pub Option<String>);
+
+/// Name of the session cookie `SignIn` sets and `SignOut` clears.
+pub const SESSION_COOKIE: &str = "sid";
+
+impl FromCall for SessionCookie {
+    async fn from_call(parts: &CallParts) -> Result<Self, Status> {
+        Ok(Self(parts.context().cookies.get(SESSION_COOKIE).cloned()))
     }
 }

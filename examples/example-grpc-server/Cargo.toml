@@ -1,5 +1,5 @@
 [package]
-name = "grpc-macro-server"
+name = "example-grpc-server"
 version = "0.1.0"
 edition = "2024"
 publish = false
@@ -8,16 +8,15 @@ publish = false
 
 [dependencies]
 by-grpc = { path = "../../packages/by-grpc" }
-by-macros = { path = "../../packages/by-macros" }
-prost = "0.13"
-tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal", "net"] }
-tonic = "0.12"
+prost = "0.14"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal", "net", "time"] }
+tokio-stream = { version = "0.1", features = ["net"] }
+tonic = "0.14"
+tonic-prost = "0.14"
 
 [dev-dependencies]
-prost-types = "0.13"
-tokio-stream = { version = "0.1", features = ["net"] }
+prost-types = "0.14"
 
 [build-dependencies]
-prost-build = "0.13"
 protoc-bin-vendored = "3"
-tonic-build = "0.12"
+tonic-prost-build = "0.14"

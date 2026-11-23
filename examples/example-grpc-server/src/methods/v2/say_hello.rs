@@ -1,5 +1,4 @@
-use by_grpc::{CallContext, Reply};
-use by_macros::grpc;
+use by_grpc::{CallContext, Reply, grpc};
 use tonic::metadata::MetadataValue;
 
 use crate::Error;
@@ -7,7 +6,11 @@ use crate::proto::v2::{HelloReply, HelloRequest};
 
 /// `biyard.greeter.v2.Greeter/SayHello`: localized greeting that reports the caller and
 /// tags the response metadata with the served version.
-#[grpc(service = "biyard.greeter.Greeter", version = "v2", method = "SayHello")]
+#[grpc(
+    service = "biyard.greeter.Greeter",
+    version = "v2",
+    method = "SayHello"
+)]
 pub async fn say_hello_v2(ctx: CallContext, req: HelloRequest) -> Result<Reply<HelloReply>, Error> {
     let name = req.name.trim();
     if name.is_empty() {

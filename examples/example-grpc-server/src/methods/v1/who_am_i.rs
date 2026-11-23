@@ -1,4 +1,4 @@
-use by_macros::grpc;
+use by_grpc::grpc;
 
 use crate::Error;
 use crate::auth::{Authenticated, VisitedWorkspace};
