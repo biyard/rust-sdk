@@ -1,0 +1,16 @@
+[package]
+name = "by-grpc"
+version = "0.1.0"
+edition = "2021"
+description = "Runtime for the #[grpc] macro: inventory-collected unary gRPC handlers with typed call context."
+license = "Apache-2.0"
+repository = "https://github.com/biyard/rust-sdk/tree/main/packages/by-grpc"
+
+[dependencies]
+axum = { version = "0.7", default-features = false }
+http = "1"
+inventory = "0.3"
+prost = "0.13"
+prost-types = "0.13"
+tonic = "0.12"
+tower = { version = "0.4", features = ["util"] }
