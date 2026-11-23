@@ -1,0 +1,5 @@
+error: put the version in `version = ".."`, not in `service`
+ --> tests/ui/fail/version_in_service.rs:6:18
+  |
+6 | #[grpc(service = "biyard.ui.v1.Echo", version = "v1")]
+  |                  ^^^^^^^^^^^^^^^^^^^

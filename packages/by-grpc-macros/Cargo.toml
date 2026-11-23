@@ -1,0 +1,17 @@
+[package]
+name = "by-grpc-macros"
+version = "0.1.0"
+edition = "2021"
+description = "#[grpc] attribute: registers an async fn as one gRPC method of by-grpc."
+license = "Apache-2.0"
+repository = "https://github.com/biyard/rust-sdk/tree/main/packages/by-grpc-macros"
+publish = false
+
+[lib]
+proc-macro = true
+
+[dependencies]
+convert_case = "0.7.1"
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "2", features = ["full"] }

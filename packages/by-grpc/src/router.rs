@@ -3,8 +3,8 @@ use std::convert::Infallible;
 use std::future::Future;
 use std::net::SocketAddr;
 
-use http::{header, HeaderValue, StatusCode};
 use tonic::service::Routes;
+use tonic::Status;
 
 use crate::method::GrpcMethod;
 
@@ -68,12 +68,7 @@ pub async fn serve(
     Ok(())
 }
 
-async fn unimplemented() -> impl axum::response::IntoResponse {
-    (
-        StatusCode::OK,
-        [
-            ("grpc-status", HeaderValue::from_static("12")),
-            (header::CONTENT_TYPE.as_str(), HeaderValue::from_static("application/grpc")),
-        ],
-    )
+async fn unimplemented() -> http::Response<tonic::body::Body> {
+    let (parts, ()) = Status::unimplemented("").into_http::<()>().into_parts();
+    http::Response::from_parts(parts, tonic::body::Body::empty())
 }

@@ -6,7 +6,6 @@ mod api_model_struct;
 mod dynamo_entity;
 mod dynamo_enum;
 mod enum_prop;
-mod grpc;
 mod mcp_tool;
 pub(crate) mod parse_queryable_fields;
 mod qdrant_entity;
@@ -369,21 +368,6 @@ pub fn derive_dioxus_controller(input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn mcp_tool(attr: TokenStream, item: TokenStream) -> TokenStream {
     mcp_tool::mcp_tool_impl(attr.into(), item.into()).into()
-}
-
-/// Registers an async fn as one unary gRPC method through `by_grpc` + `inventory`.
-///
-/// ```ignore
-/// #[grpc(service = "biyard.greeter.Greeter", version = "v1")]
-/// pub async fn say_hello(caller: Caller, req: HelloRequest) -> Result<HelloReply, Error> { .. }
-/// ```
-///
-/// - Route: `/biyard.greeter.v1.Greeter/SayHello` (`method` defaults to the PascalCase fn name).
-/// - Every parameter but the last implements `by_grpc::FromCall`; the last is the prost request.
-/// - Returns `Result<M, E>` or `Result<by_grpc::Reply<M>, E>` with `M: prost::Name`, `E: Into<tonic::Status>`.
-#[proc_macro_attribute]
-pub fn grpc(attr: TokenStream, item: TokenStream) -> TokenStream {
-    grpc::grpc_impl(attr.into(), item.into()).into()
 }
 
 // HTTP method attribute macros — shadow `dioxus::fullstack::{get,post,...}`.

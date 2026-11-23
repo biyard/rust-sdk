@@ -1,0 +1,7 @@
+error: missing `version`: every #[grpc] method belongs to a versioned proto package, e.g. version = "v1"
+ --> tests/ui/fail/missing_version.rs:6:1
+  |
+6 | #[grpc(service = "biyard.ui.Echo")]
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the attribute macro `grpc` (in Nightly builds, run with -Z macro-backtrace for more info)

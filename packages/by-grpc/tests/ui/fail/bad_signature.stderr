@@ -1,0 +1,29 @@
+error: #[grpc] requires an async fn
+ --> tests/ui/fail/bad_signature.rs:7:5
+  |
+7 | pub fn echo(req: Req) -> Result<Resp, Status> {
+  |     ^^
+
+error: #[grpc] needs the request message (or request stream) as the last parameter
+  --> tests/ui/fail/bad_signature.rs:13:24
+   |
+13 | pub async fn no_request() -> Result<Resp, Status> {
+   |                        ^^
+
+error: #[grpc] functions return Result<M | Reply<M> | impl Stream<Item = Result<M, Status>>, E> with E: Into<tonic::Status>
+  --> tests/ui/fail/bad_signature.rs:18:38
+   |
+18 | pub async fn not_result(req: Req) -> Resp {
+   |                                      ^^^^
+
+error: #[grpc] functions cannot declare generics
+  --> tests/ui/fail/bad_signature.rs:24:21
+   |
+24 | pub async fn generic<T>(req: T) -> Result<Resp, Status> {
+   |                     ^^^
+
+error: unknown attribute `path`, expected service, version or method
+  --> tests/ui/fail/bad_signature.rs:29:52
+   |
+29 | #[grpc(service = "biyard.ui.Echo", version = "v1", path = "/x")]
+   |                                                    ^^^^

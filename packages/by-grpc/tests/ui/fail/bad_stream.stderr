@@ -1,0 +1,11 @@
+error: stream items must be spelled `Result<Message, tonic::Status>`
+ --> tests/ui/fail/bad_stream.rs:8:50
+  |
+8 | pub async fn item_not_result(req: Req) -> Result<impl Stream<Item = Resp> + Send + 'static, Status> {
+  |                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: the request must be a prost message, `Streaming<Req>` or `impl Stream<Item = Result<Req, Status>>`
+  --> tests/ui/fail/bad_stream.rs:15:10
+   |
+15 |     req: impl Iterator<Item = Req>,
+   |          ^^^^^^^^^^^^^^^^^^^^^^^^^

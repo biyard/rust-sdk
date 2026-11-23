@@ -1,0 +1,5 @@
+error: version must look like v1, v2, v1alpha1 or v1beta1
+ --> tests/ui/fail/invalid_version.rs:6:46
+  |
+6 | #[grpc(service = "biyard.ui.Echo", version = "1")]
+  |                                              ^^^

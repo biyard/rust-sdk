@@ -2,15 +2,26 @@
 name = "by-grpc"
 version = "0.1.0"
 edition = "2021"
-description = "Runtime for the #[grpc] macro: inventory-collected unary gRPC handlers with typed call context."
+description = "Runtime for #[grpc]: inventory-collected gRPC handlers (unary and streaming) with typed call context."
 license = "Apache-2.0"
 repository = "https://github.com/biyard/rust-sdk/tree/main/packages/by-grpc"
+publish = false
 
 [dependencies]
-axum = { version = "0.7", default-features = false }
+axum = { version = "0.8", default-features = false }
+by-grpc-macros = { path = "../by-grpc-macros", version = "0.1" }
+call-context = { git = "ssh://git@github.com/biyard/rbdk.git", rev = "a6f4df41bba95cd1eab1520c4b037363a0b170e3" }
+futures-core = "0.3"
 http = "1"
 inventory = "0.3"
-prost = "0.13"
-prost-types = "0.13"
-tonic = "0.12"
-tower = { version = "0.4", features = ["util"] }
+prost = "0.14"
+prost-types = "0.14"
+tonic = { version = "0.14", default-features = false, features = ["router", "transport", "codegen"] }
+tonic-prost = "0.14"
+tower = { version = "0.5", features = ["util"] }
+
+[dev-dependencies]
+prost = "0.14"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tokio-stream = "0.1"
+trybuild = "1"
