@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package biyard.greeter.v2;
+
+service Greeter {
+  rpc SayHello(HelloRequest) returns (HelloReply);
+}
+
+message HelloRequest {
+  string name = 1;
+  string locale = 2;
+}
+
+message HelloReply {
+  string message = 1;
+  string greeted_by = 2;
+}
